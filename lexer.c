@@ -4,13 +4,12 @@
 #include <string.h>
 
 #include "lexer.h"
-#include "utils.h"
 
 const char* show_token_type(enum token_type type)
 {
     switch (type) {
     case IDENT:
-        return "DEFINE";
+        return "IDENTIFIER";
     case INT:
         return "INT";
     case STRING:
@@ -27,8 +26,12 @@ const char* show_token_type(enum token_type type)
         return "PLUS";
     case LESS_THAN:
         return "LESS_THAN";
+    case GREATER_THAN:
+        return "GREATER_THAN";
     case DIRECTIVE:
         return "DIRECTIVE";
+    case TYPE:
+        return "TYPE";
     case OPEN_BRACKET:
         return "OPEN_BRACKET";
     case CLOSE_BRACKET:
@@ -37,6 +40,8 @@ const char* show_token_type(enum token_type type)
         return "OPEN_PAREN";
     case CLOSE_PAREN:
         return "CLOSE_PAREN";
+    case RETURN:
+        return "RETURN";
     case INVALID:
         return "INVALID";
     case END:
@@ -55,8 +60,13 @@ void print_token(token_t* token)
     }
 }
 
-char lexer_peek_char(struct lexer* l)
+char lexer_peek_char(struct lexer* l, int skip_whitespace)
 {
+    if (skip_whitespace == 1) {
+        while (isspace(l->buffer[l->read_pos])) {
+            l->read_pos++;
+        }
+    }
     if (l->read_pos >= l->buffer_len) {
         return EOF;
     }
@@ -65,7 +75,7 @@ char lexer_peek_char(struct lexer* l)
 
 char lexer_read_char(struct lexer* l)
 {
-    l->ch = lexer_peek_char(l);
+    l->ch = lexer_peek_char(l, 0);
 
     l->pos = l->read_pos;
     l->read_pos++;
@@ -80,7 +90,7 @@ void skip_whitespace(struct lexer* l)
     }
 }
 
-void lexer_innit(struct lexer* l, char* buffer, unsigned int buffer_len)
+void lexer_init(struct lexer* l, char* buffer, unsigned int buffer_len)
 {
     l->buffer = buffer;
     l->buffer_len = buffer_len;
@@ -94,7 +104,6 @@ void lexer_innit(struct lexer* l, char* buffer, unsigned int buffer_len)
 struct token lexer_next_token(struct lexer* l)
 {
     skip_whitespace(l);
-    DEBUG("Char: %c\n", l->ch);
 
     if (l->ch == EOF) {
         lexer_read_char(l);
@@ -108,6 +117,9 @@ struct token lexer_next_token(struct lexer* l)
     } else if (l->ch == '<') {
         lexer_read_char(l);
         return (struct token) { .type = LESS_THAN, .value = NULL };
+    } else if (l->ch == '>') {
+        lexer_read_char(l);
+        return (struct token) { .type = GREATER_THAN, .value = NULL };
     } else if (l->ch == '"') {
         lexer_read_char(l);
         ut_string_slice_t slice = { .str = l->buffer + l->pos, .len = 0 };
@@ -165,7 +177,14 @@ struct token lexer_next_token(struct lexer* l)
             return (struct token) { .type = OUTPUT, .value = val };
         } else if (strcmp(val, "if") == 0) {
             return (struct token) { .type = IF, .value = val };
+        } else if (strcmp(val, "return") == 0) {
+            return (struct token) { .type = RETURN, .value = NULL };
         } else {
+            char next_char = lexer_peek_char(l, 1);
+            if (next_char != EOL && next_char != EOF && (isalnum(next_char) || next_char == '_')) {
+                return (struct token) { .type = TYPE, .value = val };
+            }
+
             return (struct token) { .type = IDENT, .value = val };
         }
 
@@ -178,17 +197,17 @@ struct token lexer_next_token(struct lexer* l)
     }
 }
 
-// TODO: unfinished
-int lexer_tokenize(char* buffer, unsigned int len){
+int lexer_tokenize(char* buffer, unsigned int len, ut_dynamic_array_t* tokens)
+{
 
-    struct lexer l;
-    lexer_innit(&l, buffer, len);
+    struct lexer lexer;
+    lexer_init(&lexer, (char*)buffer, len);
 
     struct token tok;
-    while ((tok = lexer_next_token(&l)).type != END) {
-        print_token(&tok);
-    }
+    do {
+        tok = lexer_next_token(&lexer);
+        ut_array_push(tokens, &tok);
+    } while (tok.type != END);
 
     return 0;
-
 }

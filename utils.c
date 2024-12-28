@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "utils.h"
 
@@ -53,7 +54,6 @@ void debug(char* file, int line, char* format, ...)
     fflush(stdout);
 }
 
-#ifdef IMPLEMENT_STRING_SLICE_ORIGNAL
 void ut_string_slice_original(ut_string_slice_t* str_slice, char** str)
 {
     *str = malloc(sizeof(char) * (str_slice->len) + 1);
@@ -64,9 +64,7 @@ void ut_string_slice_original(ut_string_slice_t* str_slice, char** str)
     memcpy(*str, str_slice->str, sizeof(char) * (str_slice->len));
     (*str)[str_slice->len] = '\0';
 }
-#endif
 
-#ifdef IMPLEMENT_READ_FILE
 int ut_read_file(char* file_name, char** buffer)
 {
     FILE* file = fopen(file_name, "r");
@@ -90,4 +88,91 @@ int ut_read_file(char* file_name, char** buffer)
 
     return length;
 }
-#endif
+
+void ut_array_init(ut_dynamic_array_t* arr, size_t size)
+{
+    arr->size = size;
+    arr->len = 0;
+    arr->data = NULL;
+    arr->cap = 0;
+}
+
+void ut_array_push(ut_dynamic_array_t* arr, void* elem)
+{
+    if (arr->len == arr->cap) {
+        if (arr->cap == 0) {
+            arr->cap = 1;
+        } else {
+            arr->cap *= 2;
+        }
+
+        arr->data = realloc(arr->data, arr->cap * arr->size);
+        if (arr->data == NULL) {
+            error(1, "Error reallocating memory for dynamic array");
+        }
+    }
+
+    memcpy(arr->data + arr->len * arr->size, elem, arr->size);
+    arr->len++;
+}
+
+void* ut_array_get(ut_dynamic_array_t* arr, unsigned int index)
+{
+    if (index >= arr->len) {
+        return NULL;
+    }
+
+    return arr->data + index * arr->size;
+}
+
+void ut_array_free(ut_dynamic_array_t* arr)
+{
+    free(arr->data);
+    arr->data = NULL;
+    arr->len = 0;
+    arr->cap = 0;  
+}
+
+void ut_str_cat(char **dest, ...)
+{
+    va_list args;
+    va_start(args, dest);
+
+    size_t initial_length = (*dest != NULL) ? strlen(*dest) : 0;
+    size_t total_length = initial_length;
+    char *src;
+    while ((src = va_arg(args, char *)) != NULL) {
+        total_length += strlen(src);
+    }
+    va_end(args);
+
+    char *new_dest = realloc(*dest, total_length + 1);
+    if (new_dest == NULL) {
+        error(1, "Error reallocating memory for concatenated string");
+    }
+    *dest = new_dest;
+
+    va_start(args, dest);
+    if (initial_length == 0) {
+        (*dest)[0] = '\0';
+    }
+    while ((src = va_arg(args, char *)) != NULL) {
+        strcat(*dest, src);
+    }
+    va_end(args);
+
+    ut_trim(*dest);
+}
+
+void ut_trim(char* str)
+{
+    char* end = str + strlen(str) - 1;
+    while (end > str && isspace(*end)) {
+        end--;
+    }
+    *(end + 1) = '\0';
+
+    while (*str && isspace(*str)) {
+        str++;
+    }
+}

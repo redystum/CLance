@@ -8,8 +8,8 @@
 #include <unistd.h>
 
 #include "args.h"
-#include "utils.h"
 #include "lexer.h"
+#include "utils.h"
 
 void replace(char* str, char* orig, char* rep);
 bool starts_with(const char* a, const char* b);
@@ -61,8 +61,15 @@ int main(int argc, char* argv[])
     }
     printf("Read %d bytes from %s\n", length, input);
 
-    lexer_tokenize(buffer, length);
+    ut_dynamic_array_t tokens;
+    ut_array_init(&tokens, sizeof(struct token));
 
+    lexer_tokenize(buffer, length, &tokens);
+
+    for (unsigned int i = 0; i < tokens.len; i++) {
+        struct token* t = ut_array_get(&tokens, i);
+        print_token(t);
+    }
     
 
     cmdline_parser_free(&args);
