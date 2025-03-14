@@ -1,14 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdio.h>
 #include <stdlib.h>
-
-#define DEBUG_ENABLED
-
-#define IMPLEMENT_READ_FILE
-#define IMPLEMENT_STRING_SLICE
-#define IMPLEMENT_DYNAMIC_ARRAY
-#define IMPLEMENT_STRING
 
 /*
  * Prints an error message and aborts the program
@@ -16,7 +10,7 @@
  * @param code the error code
  * @param fmt the format string
  */
-#define ERROR(...) error(__VA_ARGS__)
+#define ERROR(code, ...) error(code, __VA_ARGS__)
 /*
  * Prints a warning message
  *
@@ -41,9 +35,32 @@
 #define DEBUG(...)
 #endif
 
+/*
+ * Initializes the log file
+ *
+ * @param path the path of the log file
+ */
+void ut_file_log_init(const char* path);
+
+/*
+ * Returns the path of the log file
+ *
+ * @return the path of the log file
+ */
+char* ut_get_file_log_path();
+
+/*
+ * Frees the memory related to the log file
+ */
+void ut_file_log_close();
+
+/*
+ * Logs a message to the log file
+ *
+ * @param text the message to log
+ */
 #define EOL '\n'
 
-#ifdef IMPLEMENT_STRING_SLICE
 /*
  * Represents a slice of a string
  */
@@ -59,9 +76,7 @@ typedef struct {
  * @param str the string to store the copied content
  */
 void ut_string_slice_original(ut_string_slice_t* str_slice, char** str);
-#endif // IMPLEMENT_STRING_SLICE
 
-#ifdef IMPLEMENT_READ_FILE
 /*
  * Reads a file and stores its content in a buffer
  *
@@ -70,18 +85,51 @@ void ut_string_slice_original(ut_string_slice_t* str_slice, char** str);
  *
  * @return the length of the file or -1 if an error occurred
  */
-int ut_read_file(char* file_name, char** buffer);
-#endif // IMPLEMENT_READ_FILE
+int ut_read_file(const char* file_name, char** buffer);
 
-#ifdef IMPLEMENT_DYNAMIC_ARRAY
+/*
+ * Represents a file read line by line
+ */
+typedef struct {
+    FILE* file;
+    char* buffer;
+    size_t buffer_size;
+    size_t buffer_len;
+} ut_file_by_line_t;
+
+/*
+ * Opens a file to read it line by line
+ *
+ * @param file_name the name of the file to open
+ *
+ * @return the file read line by line or NULL if an error occurred
+ */
+ut_file_by_line_t* ut_file_by_line_open(const char* file_name);
+
+/*
+ * Reads the next line of a file
+ *
+ * @param file_by_line the file read line by line
+ *
+ * @return the next line of the file or NULL if the end of the file is reached
+ */
+char* ut_file_by_line_next(ut_file_by_line_t* file_by_line);
+
+/*
+ * Closes a file read line by line
+ *
+ * @param file_by_line the file read line by line
+ */
+void ut_file_by_line_close(ut_file_by_line_t* file_by_line);
+
 /*
  * Represents a dynamic array
  */
 typedef struct {
     void* data;
-    unsigned int len;
+    unsigned int len; // number of elements in the array
     unsigned int cap;
-    size_t size;
+    size_t size; // size of the elements in the array
 } ut_dynamic_array_t;
 
 /*
@@ -90,20 +138,18 @@ typedef struct {
  * @param arr the dynamic array to initialize
  * @param size the size of the elements in the array
  */
-void ut_array_init(ut_dynamic_array_t* arr, size_t size);
+void ut_array_init(ut_dynamic_array_t* arr, size_t elem_size);
 void ut_array_push(ut_dynamic_array_t* arr, void* elem);
-void* ut_array_get(ut_dynamic_array_t* arr, unsigned int index);
+void* ut_array_get(ut_dynamic_array_t* arr, size_t index);
 void ut_array_free(ut_dynamic_array_t* arr);
-#endif // IMPLEMENT_DYNAMIC_ARRAY
 
-#ifdef IMPLEMENT_STRING
 /*
  * Concatenates strings
  *
  * @param dest the destination string
  * @param ... the strings to concatenate
  */
-void ut_str_cat(char **dest, ...);
+void ut_str_cat(char** dest, ...);
 
 /*
  * Trims a string
@@ -111,7 +157,16 @@ void ut_str_cat(char **dest, ...);
  * @param str the string to trim
  */
 void ut_trim(char* str);
-#endif // IMPLEMENT_STRING
+
+/*
+ * Replaces a text in a string
+ *
+ * @param logs the string to replace the text
+ * @param len the length of the string
+ * @param old_text the text to replace
+ * @param new_text the new text
+ */
+void ut_replace_text(char **logs, size_t *len, const char *old_text, const char *new_text);
 
 void error(int code, char* fmt, ...);
 void warning(char* format, ...);

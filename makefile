@@ -82,3 +82,6 @@ pmccabe:
 # entry to run the cppcheck tool
 cppcheck:
 	cppcheck --enable=all --verbose *.c *.h
+
+run: $(PROGRAM)
+	./$(PROGRAM) -i main.lance -o out/main.c

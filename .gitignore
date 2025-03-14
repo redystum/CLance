@@ -2,3 +2,6 @@ old/
 out/
 
 *.o
+
+.vscode/
+.fleet/
