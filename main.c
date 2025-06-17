@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +8,7 @@
 
 #include "args.h"
 #include "lexer.h"
+#include "parser.h"
 #include "utils.h"
 
 void replace(char* str, char* orig, char* rep);
@@ -70,6 +70,13 @@ int main(int argc, char* argv[])
         struct token* t = ut_array_get(&tokens, i);
         print_token(t);
     }
+
+    struct parser p;
+    struct program_node program;
+    parser_init(tokens, &p);
+
+    parse_program(&p, &program);
+    printf("Parsed program with %d instructions\n", program.instructions.len);
     
 
     cmdline_parser_free(&args);

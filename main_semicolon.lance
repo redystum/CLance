@@ -1,0 +1,11 @@
+#include <stdio.h>;
+;
+print("Hello World\n");
+int a = input("Enter a number: ");
+int b = 10;
+;
+if (a > b) {;
+    print("a is greater than b\n");
+};
+;
+return 0;

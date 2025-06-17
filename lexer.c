@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "lexer.h"
+#include "utils.h"
 
 const char* show_token_type(enum token_type type)
 {
@@ -187,7 +188,10 @@ struct token lexer_next_token(struct lexer* l)
 
             return (struct token) { .type = IDENT, .value = val };
         }
-
+    } else if (l->ch == ';') {
+        INFO("Skipping ';' character\n");
+        lexer_read_char(l);
+        return lexer_next_token(l);
     } else {
         ut_string_slice_t slice = { .str = l->buffer + l->pos, .len = 1 };
         char* value = NULL;

@@ -18,7 +18,7 @@ PROGRAM=lance
 PROGRAM_OPT=args
 
 ## Object files required to build the executable
-PROGRAM_OBJS=main.o utils.o lexer.o $(PROGRAM_OPT).o
+PROGRAM_OBJS=main.o utils.o lexer.o parser.o $(PROGRAM_OPT).o
 
 # Clean and all are not files
 .PHONY: clean all docs indent debugon
@@ -26,7 +26,7 @@ PROGRAM_OBJS=main.o utils.o lexer.o $(PROGRAM_OPT).o
 all: $(PROGRAM)
 
 # activate DEBUG, defining the SHOW_DEBUG macro
-debugon: CFLAGS += -D SHOW_DEBUG -g
+debugon: CFLAGS += -D DEBUG_ENABLED -g
 debugon: $(PROGRAM)
 
 # activate optimization (-O...)
@@ -44,6 +44,7 @@ $(PROGRAM_OPT).o: $(PROGRAM_OPT).c $(PROGRAM_OPT).h
 
 utils.o: utils.c utils.h
 lexer.o: lexer.c lexer.h utils.h
+parser.o: parser.c parser.h utils.h
 
 # disable warnings from gengetopt generated files
 $(PROGRAM_OPT).o: $(PROGRAM_OPT).c $(PROGRAM_OPT).h

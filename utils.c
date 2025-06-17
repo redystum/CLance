@@ -15,13 +15,13 @@
 int can_log = 0;
 void _file_log(char* tag, char* text, va_list args);
 
-void error(int code, char* fmt, ...)
+void error(char* file, int line, int code, char* fmt, ...)
 {
     va_list args, args_copy;
 
     va_start(args, fmt);
     va_copy(args_copy, args);
-    fprintf(stderr, COLOR_RED "[E]\t ");
+    fprintf(stderr, COLOR_RED "[E %s:%d]\t ", file, line);
     vfprintf(stderr, fmt, args);
     _file_log("[E]\t ", fmt, args_copy);
     va_end(args_copy);
@@ -83,12 +83,12 @@ void ut_file_log_init(const char* path)
 
     log_file_path = strdup(path);
     if (log_file_path == NULL) {
-        error(1, "Error allocating memory for log file path");
+        ERROR(1, "Error allocating memory for log file path");
     }
 
     FILE* file = fopen(log_file_path, "w");
     if (file == NULL) {
-        error(1, "Error opening log file");
+        ERROR(1, "Error opening log file");
     }
     fclose(file);
 
@@ -103,11 +103,11 @@ void _file_log(char* tag, char* text, va_list args)
     }
 
     if (log_file_path == NULL) {
-        error(1, "Log file path not initialized");
+        ERROR(1, "Log file path not initialized");
     }
     FILE* file = fopen(log_file_path, "a");
     if (file == NULL) {
-        error(1, "Error opening log file");
+        ERROR(1, "Error opening log file");
     }
 
     fprintf(file, "%s", tag);
@@ -133,7 +133,7 @@ void ut_string_slice_original(ut_string_slice_t* str_slice, char** str)
 {
     *str = malloc(sizeof(char) * (str_slice->len) + 1);
     if (*str == NULL) {
-        error(1, "Error allocating memory for string slice");
+        ERROR(1, "Error allocating memory for string slice");
     }
 
     memcpy(*str, str_slice->str, sizeof(char) * (str_slice->len));
@@ -301,7 +301,7 @@ void ut_str_cat(char** dest, ...)
 
     char* new_dest = realloc(*dest, total_length + 1);
     if (new_dest == NULL) {
-        error(1, "Error reallocating memory for concatenated string");
+        ERROR(1, "Error reallocating memory for concatenated string");
     }
     *dest = new_dest;
 
@@ -343,7 +343,7 @@ void ut_replace_text(char **logs, size_t *len, const char *old_text, const char 
     char *result = malloc(result_len + 1); // +1 for null terminator
 
     if (!result) {
-        error(1, "Failed to allocate memory");
+        ERROR(1, "Failed to allocate memory");
     }
 
     char *src = *logs;

@@ -10,7 +10,7 @@
  * @param code the error code
  * @param fmt the format string
  */
-#define ERROR(code, ...) error(code, __VA_ARGS__)
+#define ERROR(code, ...) error(__FILE__, __LINE__, code, __VA_ARGS__)
 /*
  * Prints a warning message
  *
@@ -168,7 +168,7 @@ void ut_trim(char* str);
  */
 void ut_replace_text(char **logs, size_t *len, const char *old_text, const char *new_text);
 
-void error(int code, char* fmt, ...);
+void error(char* file, int line, int code, char* fmt, ...);
 void warning(char* format, ...);
 void info(char* format, ...);
 void debug(char* file, int line, char* format, ...);
