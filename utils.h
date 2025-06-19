@@ -30,7 +30,7 @@
  * @param fmt the format string
  */
 #ifdef DEBUG_ENABLED
-#define DEBUG(...) debug(__FILE__, __LINE__, __VA_ARGS__)
+#define DEBUG(...) debug(__FILE__, __LINE__, __func__, __VA_ARGS__)
 #else
 #define DEBUG(...)
 #endif
@@ -171,6 +171,6 @@ void ut_replace_text(char **logs, size_t *len, const char *old_text, const char 
 void error(char* file, int line, int code, char* fmt, ...);
 void warning(char* format, ...);
 void info(char* format, ...);
-void debug(char* file, int line, char* format, ...);
+void debug(char* file, int line, const char* func, char* format, ...);
 
 #endif // UTILS_H

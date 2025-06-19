@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 print("Hello World\n")
-int a = input("Enter a number: ")
-int b = 10
+int a = /* a comment here */ input("Enter a number: ")
+int b = 10; // semicolon to test if is recognized as EOL
 
 if (a > b) {
     print("a is greater than b\n")

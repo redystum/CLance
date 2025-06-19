@@ -60,12 +60,12 @@ void info(char* format, ...)
     fflush(stdout);
 }
 
-void debug(char* file, int line, char* format, ...)
+void debug(char* file, int line, const char* func, char* format, ...)
 {
     va_list args;
 
     va_start(args, format);
-    fprintf(stdout, COLOR_PURPLE "[D %s:%d]: ", file, line);
+    fprintf(stdout, COLOR_PURPLE "[D %s:%d] %s: ", file, line, func);
     vfprintf(stdout, format, args);
     va_end(args);
     fprintf(stdout, "\n" COLOR_RESET);

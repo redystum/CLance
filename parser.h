@@ -13,7 +13,8 @@ enum intruction_type {
     PRINT_STATEMENT,
     INPUT_STATEMENT,
     END_STATEMENT,
-    DIRECTIVE_STATEMENT
+    DIRECTIVE_STATEMENT,
+    TYPE_STATEMENT,
 };
 
 enum term_type {
@@ -23,17 +24,24 @@ enum term_type {
     STRING_TERM,
 };
 
-struct term_node {
-    enum term_type type;
-    union {
-        char* value;
-    };
+enum types {
+    INT_TYPE,
+    STRING_TYPE,
+    VOID_TYPE,
+    UNKNOWN_TYPE,
 };
 
 enum expression_type {
     TERM_EXPRESSION,
     PLUS_EXPRESSION,
     INPUT_EXPRESSION,
+};
+
+struct term_node {
+    enum term_type type;
+    union {
+        char* value;
+    };
 };
 
 struct term_binary_node {
@@ -72,7 +80,7 @@ struct assign_node {
 
 struct if_node {
     struct relation_node rel;
-    struct instruction_node* body;
+    struct program_node* body;
 };
 
 struct print_node {
@@ -83,6 +91,10 @@ struct return_node {
     struct expression_node expression;
 };
 
+struct type_node {
+    enum types type;
+};
+
 struct instruction_node {
     enum intruction_type type;
     union {
@@ -91,6 +103,7 @@ struct instruction_node {
         struct print_node print_statement;
         struct return_node return_statement;
         struct input_node input_statement;
+        struct type_node type_statement;
     };
 };
 
@@ -98,14 +111,19 @@ struct program_node {
     ut_dynamic_array_t instructions;
 };
 
+struct type_dict {
+    char* name;
+    enum types type;
+};
+
 struct parser{
     ut_dynamic_array_t tokens;
     unsigned int index;
+    ut_dynamic_array_t types_dict;
 };
 
 void parser_current(struct parser* p, struct token* token);
 void parser_advance(struct parser* p);
-void parser_reduce(struct parser* p);
 void parse_instr(struct parser* p, struct instruction_node* instr);
 void parse_term(struct parser* p, struct term_node* term);
 void parse_exp(struct parser* p, struct expression_node* exp);
@@ -116,6 +134,5 @@ void parse_print(struct parser* p, struct instruction_node* instr);
 void parse_input(struct parser* p, struct instruction_node* instr);
 void parse_return(struct parser* p, struct instruction_node* instr);
 void parse_program(struct parser* p, struct program_node* program);
-void parser_init(ut_dynamic_array_t tokens, struct parser* p);
-
+void parser_init(ut_dynamic_array_t tokens, ut_dynamic_array_t types_dict, struct parser* p);
 #endif // PARSER_H

@@ -73,7 +73,11 @@ int main(int argc, char* argv[])
 
     struct parser p;
     struct program_node program;
-    parser_init(tokens, &p);
+
+    ut_dynamic_array_t types_dict;
+    ut_array_init(&types_dict, sizeof(struct type_dict));
+
+    parser_init(tokens, types_dict, &p);
 
     parse_program(&p, &program);
     printf("Parsed program with %d instructions\n", program.instructions.len);
