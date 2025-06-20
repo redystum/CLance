@@ -15,6 +15,7 @@ enum intruction_type {
     END_STATEMENT,
     DIRECTIVE_STATEMENT,
     TYPE_STATEMENT,
+    EOL_STATEMENT,
 };
 
 enum term_type {
@@ -135,4 +136,5 @@ void parse_input(struct parser* p, struct instruction_node* instr);
 void parse_return(struct parser* p, struct instruction_node* instr);
 void parse_program(struct parser* p, struct program_node* program);
 void parser_init(ut_dynamic_array_t tokens, ut_dynamic_array_t types_dict, struct parser* p);
+void print_instructions(ut_dynamic_array_t* instructions, unsigned int deep);
 #endif // PARSER_H

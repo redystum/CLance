@@ -3,6 +3,91 @@
 #include "utils.h"
 #include "string.h"
 
+const char* show_instruction_type(enum intruction_type type)
+{
+    switch (type) {
+    case INSTRUCTION:
+        return "INSTRUCTION";
+    case VARIABLE:
+        return "VARIABLE";
+    case ASSIGN:
+        return "ASSIGN";
+    case RETURN_STATEMENT:
+        return "RETURN";
+    case IF_STATEMENT:
+        return "IF";
+    case PRINT_STATEMENT:
+        return "PRINT";
+    case INPUT_STATEMENT:
+        return "INPUT";
+    case END_STATEMENT:
+        return "END";
+    case DIRECTIVE_STATEMENT:
+        return "DIRECTIVE";
+    case TYPE_STATEMENT:
+        return "TYPE";
+    case EOL_STATEMENT:
+        return "EOL";
+    }
+    return "UNKNOWN";
+}
+
+void print_instructions(ut_dynamic_array_t* instructions, unsigned int deep){
+
+
+    for (unsigned int i = 0; i < instructions->len; i++) {
+        struct instruction_node* inst = ut_array_get(instructions, i);
+        printf("\n");
+        print_w_deep(deep, "Instruction: %s\n", show_instruction_type(inst->type));
+
+        if (inst->type == IF_STATEMENT) {
+            print_w_deep(deep, " - If Statement with relation type: %d\n", inst->if_statement.rel.type);
+            if (inst->if_statement.rel.type == GREATER_THAN_RELATION) {
+                print_w_deep(deep, " - Greater Than Relation: %s > %s\n",
+                       inst->if_statement.rel.greater_than.left.value,
+                       inst->if_statement.rel.greater_than.right.value);
+            }
+            if (inst->if_statement.body != NULL && inst->if_statement.body->instructions.len > 0) {
+                print_w_deep(deep, " - If Body Instructions:\n");
+                print_instructions(&inst->if_statement.body->instructions, deep + 1);
+            }
+        } else if (inst->type == VARIABLE) {
+            print_w_deep(deep, " - Variable Declaration\n");
+        } else if (inst->type == INSTRUCTION) {
+            print_w_deep(deep, " - Instruction\n");
+        } else if (inst->type == ASSIGN) {
+            print_w_deep(deep, " - Assign: %s\n", inst->assign.identifier);
+            print_w_deep(deep, " - Expression Type: %d\n", inst->assign.expression.type);
+            if (inst->assign.expression.type == PLUS_EXPRESSION) {
+                print_w_deep(deep, " - Plus Expression: %s + %s\n",
+                       inst->assign.expression.add.left.value,
+                       inst->assign.expression.add.right.value);
+            } else if (inst->assign.expression.type == INPUT_EXPRESSION) {
+                print_w_deep(deep, " - Input Expression with prompt: %s\n", inst->assign.expression.input.prompt);
+            } else if (inst->assign.expression.type == TERM_EXPRESSION) {
+                print_w_deep(deep, " - Term Expression: %s\n", inst->assign.expression.term.value);
+            }
+        } else if (inst->type == PRINT_STATEMENT) {
+            print_w_deep(deep, " - Print Statement: %s\n", inst->print_statement.term.value);
+        } else if (inst->type == INPUT_STATEMENT) {
+            print_w_deep(deep, " - Input Statement with prompt: %s\n", inst->input_statement.prompt);
+        } else if (inst->type == RETURN_STATEMENT) {
+            print_w_deep(deep, " - Return Statement with expression type: %d\n", inst->return_statement.expression.type);
+        } else if (inst->type == TYPE_STATEMENT) {
+            print_w_deep(deep, " - Type Statement: %d\n", inst->type_statement.type);
+        }
+        else if (inst->type == EOL_STATEMENT) {
+            print_w_deep(deep, " - End of Line Statement\n");
+        } else if (inst->type == DIRECTIVE_STATEMENT) {
+            print_w_deep(deep, " - Directive Statement\n");
+        } else if (inst->type == END_STATEMENT) {
+            print_w_deep(deep, " - End of Program Statement\n");
+        } else {
+            print_w_deep(deep, " - Unknown Instruction Type\n"); 
+        }
+    }
+}
+
 void parse_term(struct parser* p, struct term_node* term)
 {
     struct token token;
@@ -184,11 +269,13 @@ void parse_if(struct parser* p, struct instruction_node* instr)
     }
     parser_advance(p);
 
-    struct program_node if_body;
-    parse_program(p, &if_body);
+    struct program_node* if_body = (struct program_node*)malloc(sizeof(struct program_node));
+    if (!if_body) {
+        ERROR(1, "if: Memory allocation failed for if body");
+    }
     
-    // parse_instr(p, instr->if_statement.body);
-    instr->if_statement.body = &if_body;
+    parse_program(p, if_body);
+    instr->if_statement.body = if_body;
 
     parser_current(p, &token);
     DEBUG("Current token after body is %s, %i", show_token_type(token.type), token.type);
@@ -290,6 +377,7 @@ void parse_instr(struct parser* p, struct instruction_node* instr)
     } else if (token.type == RETURN) {
         parse_return(p, instr);
     } else if (token.type == EOL_) {
+        instr->type = EOL_STATEMENT;
         parser_advance(p);
     } else if (token.type == DIRECTIVE) {
         // todo
@@ -300,9 +388,9 @@ void parse_instr(struct parser* p, struct instruction_node* instr)
     } else if (token.type == END) {
         instr->type = END_STATEMENT;
     } else if (token.type == INVALID) {
-        ERROR(1, "instr: Invalid token encountered: %s", token.value ? token.value : "NULL");
+        ERROR(1, "Invalid token encountered: %s", token.value ? token.value : "NULL");
     } else {
-        ERROR(1, "instr: Unexpected token: %s %i", show_token_type(token.type), token.type);
+        ERROR(1, "Unexpected token: %s %i", show_token_type(token.type), token.type);
     }
 
     DEBUG("Parsed instruction of type %d, token type %s\n", instr->type, show_token_type(token.type));

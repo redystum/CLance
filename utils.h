@@ -168,6 +168,16 @@ void ut_trim(char* str);
  */
 void ut_replace_text(char **logs, size_t *len, const char *old_text, const char *new_text);
 
+/*
+ * Prints a message with a specific indentation level
+ *
+ * @param deep the indentation level
+ * @param format the format string
+ * @param ... the arguments to format
+ */
+void print_w_deep(unsigned int deep, const char* format, ...);
+
+
 void error(char* file, int line, int code, char* fmt, ...);
 void warning(char* format, ...);
 void info(char* format, ...);

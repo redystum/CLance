@@ -65,7 +65,7 @@ void debug(char* file, int line, const char* func, char* format, ...)
     va_list args;
 
     va_start(args, format);
-    fprintf(stdout, COLOR_PURPLE "[D %s:%d] %s: ", file, line, func);
+    fprintf(stdout, COLOR_PURPLE "[%s:%d] %s: ", file, line, func);
     vfprintf(stdout, format, args);
     va_end(args);
     fprintf(stdout, "\n" COLOR_RESET);
@@ -364,4 +364,16 @@ void ut_replace_text(char **logs, size_t *len, const char *old_text, const char 
 
     *logs = result;
     *len = result_len;
+}
+
+void print_w_deep(unsigned int deep, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    for (unsigned int i = 0; i < deep; i++) {
+        printf("\t");
+    }
+    vprintf(format, args);
+    va_end(args);
 }

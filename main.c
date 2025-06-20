@@ -80,6 +80,8 @@ int main(int argc, char* argv[])
     parser_init(tokens, types_dict, &p);
 
     parse_program(&p, &program);
+
+    print_instructions(&program.instructions, 0);
     printf("Parsed program with %d instructions\n", program.instructions.len);
     
 

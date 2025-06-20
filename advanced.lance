@@ -1,11 +1,10 @@
 #include stdio.h
 
 print("Hello World\n")
-int a = input("Enter a number: ")
 int b = 10
 
-if (a > b) {
-    print("$a is greater than $b\n")
+if (input("Enter a number: ") > b) {
+    print("input is greater than $b\n")
 }
 
 print("sum = ${a+b}")
