@@ -265,6 +265,8 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 	instr->assign.identifier = token.value;
 	parser_advance(p);
 
+    DEBUG("Parsing assignment for identifier '%s', type %s : %d", instr->assign.identifier, show_types(instr->type_statement.type), instr->type_statement.type);
+
 	if (instr->type_statement.type != NULL_TYPE) {
         DEBUG("Type already set for identifier '%s', skipping type assignment",
               instr->assign.identifier);
@@ -291,6 +293,11 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 			      "assign: Identifier '%s' not found in types dictionary",
 			      instr->assign.identifier);
 		}
+
+        DEBUG("Found type for identifier '%s': %s : %d",
+              instr->assign.identifier,
+              show_types(instr->type_statement.type),
+              instr->type_statement.type);
 	}
 
 	parser_current(p, &token);
@@ -350,7 +357,7 @@ void parse_type(struct parser *p, struct instruction_node *instr) {
 
 	parser_current(p, &token);
 
-	// instr->type_statement.type = enum_type(token.value);
+	instr->type_statement.type = enum_type(token.value);
 	parser_advance(p);
 
 	parse_assign(p, instr);

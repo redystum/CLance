@@ -26,7 +26,7 @@ enum term_type {
 };
 
 enum types {
-	NULL_TYPE = -1,
+	NULL_TYPE,
 	INT_TYPE,
 	STRING_TYPE,
 	VOID_TYPE,
