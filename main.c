@@ -110,26 +110,27 @@ int main(int argc, char *argv[]) {
 		if (instr->type == IF_STATEMENT
 		    && instr->if_statement.body != NULL) {
 			free(instr->if_statement.body);
+			instr->if_statement.body = NULL;
 		}
 	}
-	ut_array_free(&program.instructions);
 
 	for (unsigned int i = 0; i < types_dict.len; i++) {
 		struct type_dict *type = ut_array_get(&types_dict, i);
 		free(type->name);
+		type->name = NULL;
 	}
-	ut_array_free(&types_dict);
+
+	ut_array_free(&program.instructions);
 
 	for (unsigned int i = 0; i < tokens.len; i++) {
 		struct token *t = ut_array_get(&tokens, i);
 		free(t->value);
+		t->value = NULL;
 	}
 	ut_array_free(&tokens);
 
 	cmdline_parser_free(&args);
 	free(output);
 	free(buffer);
-	ut_array_free(&tokens);
-	ut_array_free(&types_dict);
 	return 0;
 }

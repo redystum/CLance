@@ -266,7 +266,10 @@ void *ut_array_get(ut_dynamic_array_t *arr, size_t index) {
 }
 
 void ut_array_free(ut_dynamic_array_t *arr) {
-	free(arr->data);
+	if (arr->data != NULL) {
+        free(arr->data);
+        arr->data = NULL;
+    }
 	arr->len = 0;
 	arr->cap = 0;
 	arr->data = NULL;
