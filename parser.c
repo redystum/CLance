@@ -79,7 +79,7 @@ void print_instructions(ut_dynamic_array_t* instructions, unsigned int deep){
         else if (inst->type == EOL_STATEMENT) {
             print_w_deep(deep, " - End of Line Statement\n");
         } else if (inst->type == DIRECTIVE_STATEMENT) {
-            print_w_deep(deep, " - Directive Statement\n");
+            print_w_deep(deep, " - Directive Statement with identifier: %s\n", inst->directive_statement.identifier);
         } else if (inst->type == END_STATEMENT) {
             print_w_deep(deep, " - End of Program Statement\n");
         } else {
@@ -223,14 +223,14 @@ enum types enum_type(char* term)
     }
 }
 
-void parse_type(struct parser* p, struct instruction_node* instr, struct token original_token)
+void parse_type(struct parser* p, struct instruction_node* instr)
 {
     struct token token;
-    struct term_node term;
 
+    parser_current(p, &token);
     instr->type = TYPE_STATEMENT;
-    instr->type_statement.type = enum_type(original_token.value);
-    DEBUG("Parsed type: %s : %s", original_token.value, show_token_type(original_token.type));
+    instr->type_statement.type = enum_type(token.value);
+    DEBUG("Parsed type: %s : %s", token.value, show_token_type(token.type));
     parser_advance(p);
 
     parse_assign(p, instr);
@@ -357,6 +357,20 @@ void parse_return(struct parser* p, struct instruction_node* instr)
     DEBUG("Parsed return statement with expression type %d", exp.type);
 }
 
+void parse_directive(struct parser* p, struct instruction_node* instr)
+{
+    struct token token;
+
+    instr->type = DIRECTIVE_STATEMENT;
+
+    parser_current(p, &token);
+    instr->directive_statement.identifier = token.value;
+
+    parser_advance(p);
+
+    DEBUG("Parsed directive statement with identifier '%s'", instr->directive_statement.identifier);
+}
+
 void parse_instr(struct parser* p, struct instruction_node* instr)
 {
     struct token token;
@@ -367,7 +381,7 @@ void parse_instr(struct parser* p, struct instruction_node* instr)
     if (token.type == IDENT) {
         parse_assign(p, instr);
     } else if (token.type == TYPE) {
-        parse_type(p, instr, token);
+        parse_type(p, instr);
     } else if (token.type == INPUT) {
         parse_input(p, instr);
     } else if (token.type == OUTPUT) {
@@ -380,9 +394,7 @@ void parse_instr(struct parser* p, struct instruction_node* instr)
         instr->type = EOL_STATEMENT;
         parser_advance(p);
     } else if (token.type == DIRECTIVE) {
-        // todo
-        instr->type = DIRECTIVE_STATEMENT;
-        parser_advance(p);
+        parse_directive(p, instr);
     } else if (token.type == CLOSE_BRACKET) {
         instr->type = END_STATEMENT;
     } else if (token.type == END) {
