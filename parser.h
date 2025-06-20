@@ -3,10 +3,10 @@
 
 #include "utils.h"
 #include "lexer.h"
+#include <string.h>
 
 enum intruction_type {
 	INSTRUCTION,
-	VARIABLE,
 	ASSIGN,
 	RETURN_STATEMENT,
 	IF_STATEMENT,
@@ -26,6 +26,7 @@ enum term_type {
 };
 
 enum types {
+	NULL_TYPE = -1,
 	INT_TYPE,
 	STRING_TYPE,
 	VOID_TYPE,
@@ -102,7 +103,7 @@ struct directive_node {
 
 struct instruction_node {
 	enum intruction_type type;
-	union {
+	// union {
 		struct assign_node assign;
 		struct if_node if_statement;
 		struct print_node print_statement;
@@ -110,7 +111,7 @@ struct instruction_node {
 		struct input_node input_statement;
 		struct type_node type_statement;
 		struct directive_node directive_statement;
-	};
+	// };
 };
 
 struct program_node {

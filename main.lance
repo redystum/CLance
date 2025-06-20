@@ -3,6 +3,7 @@
 print("Hello World\n")
 int a = input("Enter a number: ")
 int b = 10; // semicolon to test if is recognized as EOL
+b = 9
 
 if (a > b) {
     print("a is greater than b\n")

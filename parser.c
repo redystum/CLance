@@ -7,8 +7,6 @@ const char *show_instruction_type(enum intruction_type type) {
 	switch (type) {
 	case INSTRUCTION:
 		return "INSTRUCTION";
-	case VARIABLE:
-		return "VARIABLE";
 	case ASSIGN:
 		return "ASSIGN";
 	case RETURN_STATEMENT:
@@ -31,6 +29,22 @@ const char *show_instruction_type(enum intruction_type type) {
 	return "UNKNOWN";
 }
 
+const char *show_types(enum types type) {
+	switch (type) {
+	case INT_TYPE:
+		return "INT";
+	case STRING_TYPE:
+		return "STRING";
+	case VOID_TYPE:
+		return "VOID";
+	case UNKNOWN_TYPE:
+		return "UNKNOWN";
+	case NULL_TYPE:
+		return "NULL";
+	}
+	return "UNKNOWN";
+}
+
 void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 
 	for (unsigned int i = 0; i < instructions->len; i++) {
@@ -39,7 +53,8 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 		print_w_deep(deep, "Instruction: %s\n",
 			     show_instruction_type(inst->type));
 
-		if (inst->type == IF_STATEMENT) {
+		switch (inst->type) {
+		case IF_STATEMENT:
 			print_w_deep(deep,
 				     " - If Statement with relation type: %d\n",
 				     inst->if_statement.rel.type);
@@ -47,69 +62,120 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			    GREATER_THAN_RELATION) {
 				print_w_deep(deep,
 					     " - Greater Than Relation: %s > %s\n",
-					     inst->if_statement.rel.
-					     greater_than.left.value,
-					     inst->if_statement.rel.
-					     greater_than.right.value);
+					     inst->if_statement.
+					     rel.greater_than.left.value,
+					     inst->if_statement.
+					     rel.greater_than.right.value);
 			}
 			if (inst->if_statement.body != NULL
 			    && inst->if_statement.body->instructions.len > 0) {
 				print_w_deep(deep,
 					     " - If Body Instructions:\n");
-				print_instructions(&inst->if_statement.body->
-						   instructions, deep + 1);
+				print_instructions(&inst->if_statement.
+						   body->instructions,
+						   deep + 1);
 			}
-		} else if (inst->type == VARIABLE) {
-			print_w_deep(deep, " - Variable Declaration\n");
-		} else if (inst->type == INSTRUCTION) {
+
+			break;
+		case INSTRUCTION:
 			print_w_deep(deep, " - Instruction\n");
-		} else if (inst->type == ASSIGN) {
-			print_w_deep(deep, " - Assign: %s\n",
-				     inst->assign.identifier);
+
+			break;
+		case ASSIGN:
+			print_w_deep(deep, " - Assign: %s: %s\n",
+				     inst->assign.identifier,
+				     show_types(inst->type_statement.type));
 			print_w_deep(deep, " - Expression Type: %d\n",
 				     inst->assign.expression.type);
-			if (inst->assign.expression.type == PLUS_EXPRESSION) {
+			switch (inst->assign.expression.type) {
+			case PLUS_EXPRESSION:
 				print_w_deep(deep,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.left.
-					     value,
-					     inst->assign.expression.add.right.
-					     value);
-			} else if (inst->assign.expression.type ==
-				   INPUT_EXPRESSION) {
+					     inst->assign.expression.add.
+					     left.value,
+					     inst->assign.expression.add.
+					     right.value);
+				break;
+			case INPUT_EXPRESSION:
 				print_w_deep(deep,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.input.
-					     prompt);
-			} else if (inst->assign.expression.type ==
-				   TERM_EXPRESSION) {
+					     inst->assign.expression.
+					     input.prompt);
+				break;
+			case TERM_EXPRESSION:
 				print_w_deep(deep, " - Term Expression: %s\n",
-					     inst->assign.expression.term.
-					     value);
+					     inst->assign.expression.
+					     term.value);
+				break;
+			default:
+				print_w_deep(deep,
+					     " - Unknown Expression Type: %d\n",
+					     inst->assign.expression.type);
 			}
-		} else if (inst->type == PRINT_STATEMENT) {
+			break;
+		case PRINT_STATEMENT:
 			print_w_deep(deep, " - Print Statement: %s\n",
 				     inst->print_statement.term.value);
-		} else if (inst->type == INPUT_STATEMENT) {
+			break;
+		case INPUT_STATEMENT:
 			print_w_deep(deep,
 				     " - Input Statement with prompt: %s\n",
 				     inst->input_statement.prompt);
-		} else if (inst->type == RETURN_STATEMENT) {
+			break;
+		case RETURN_STATEMENT:
 			print_w_deep(deep,
 				     " - Return Statement with expression type: %d\n",
 				     inst->return_statement.expression.type);
-		} else if (inst->type == TYPE_STATEMENT) {
+			break;
+		case TYPE_STATEMENT:
 			print_w_deep(deep, " - Type Statement: %d\n",
 				     inst->type_statement.type);
-		} else if (inst->type == EOL_STATEMENT) {
+
+			print_w_deep(deep + 1, " - Assign: %s: %s\n",
+				     inst->assign.identifier,
+				     show_types(inst->type_statement.type));
+			print_w_deep(deep + 1, " - Expression Type: %d\n",
+				     inst->assign.expression.type);
+			switch (inst->assign.expression.type) {
+			case PLUS_EXPRESSION:
+				print_w_deep(deep + 1,
+					     " - Plus Expression: %s + %s\n",
+					     inst->assign.expression.add.
+					     left.value,
+					     inst->assign.expression.add.
+					     right.value);
+				break;
+			case INPUT_EXPRESSION:
+				print_w_deep(deep + 1,
+					     " - Input Expression with prompt: %s\n",
+					     inst->assign.expression.input.
+					     prompt);
+				break;
+			case TERM_EXPRESSION:
+				print_w_deep(deep + 1,
+					     " - Term Expression: %s\n",
+					     inst->assign.expression.
+					     term.value);
+				break;
+			default:
+				print_w_deep(deep + 1,
+					     " - Unknown Expression Type: %d\n",
+					     inst->assign.expression.type);
+			}
+
+			break;
+		case EOL_STATEMENT:
 			print_w_deep(deep, " - End of Line Statement\n");
-		} else if (inst->type == DIRECTIVE_STATEMENT) {
+			break;
+		case DIRECTIVE_STATEMENT:
 			print_w_deep(deep,
 				     " - Directive Statement with identifier: %s\n",
 				     inst->directive_statement.identifier);
-		} else if (inst->type == END_STATEMENT) {
+			break;
+		case END_STATEMENT:
 			print_w_deep(deep, " - End of Program Statement\n");
-		} else {
+			break;
+		default:
 			print_w_deep(deep, " - Unknown Instruction Type\n");
 		}
 	}
@@ -158,7 +224,6 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 	} else if (token.type == INPUT) {
 		parser_advance(p);
 
-		// Check for opening parenthesis
 		parser_current(p, &token);
 		if (token.type != OPEN_PAREN) {
 			ERROR(1, "input: Expected '(', got %s",
@@ -166,19 +231,17 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 		}
 		parser_advance(p);
 
-		// Get the prompt string
 		parser_current(p, &token);
 		if (token.type != STRING) {
 			ERROR(1, "input: Expected string prompt, got %s",
 			      show_token_type(token.type));
 		}
-		// Setup input expression
-		exp->type = INPUT_EXPRESSION;
+
+        exp->type = INPUT_EXPRESSION;
 		exp->input.prompt = token.value;
 
 		parser_advance(p);
 
-		// Check for closing parenthesis
 		parser_current(p, &token);
 		if (token.type != CLOSE_PAREN) {
 			ERROR(1, "input: Expected ')', got %s",
@@ -202,6 +265,34 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 	instr->assign.identifier = token.value;
 	parser_advance(p);
 
+	if (instr->type_statement.type != NULL_TYPE) {
+        DEBUG("Type already set for identifier '%s', skipping type assignment",
+              instr->assign.identifier);
+		struct type_dict new_type = {
+			.name = instr->assign.identifier,
+			.type = instr->type_statement.type
+		};
+		ut_array_push(&p->types_dict, &new_type);
+	} else {
+        DEBUG("Type not set for identifier '%s', searching in types dictionary",
+              instr->assign.identifier);
+		int found = 0;
+		for (unsigned int i = 0; i < p->types_dict.len; i++) {
+			struct type_dict *type =
+			    ut_array_get(&p->types_dict, i);
+			if (strcmp(type->name, instr->assign.identifier) == 0) {
+				instr->type_statement.type = type->type;
+				found = 1;
+				break;
+			}
+		}
+		if (!found) {
+			ERROR(1,
+			      "assign: Identifier '%s' not found in types dictionary",
+			      instr->assign.identifier);
+		}
+	}
+
 	parser_current(p, &token);
 	if (token.type != EQUAL) {
 		ERROR(1, "assign: Expected '=', got %s",
@@ -211,8 +302,10 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 
 	parse_exp(p, &instr->assign.expression);
 
-	DEBUG("Parsed assignment for identifier '%s'",
-	      instr->assign.identifier);
+	// todo: check if the expression type matches the identifier type
+
+	DEBUG("Parsed assignment for identifier '%s', type %s : %d",
+	      instr->assign.identifier, show_types(instr->type_statement.type), instr->type_statement.type);
 }
 
 void parse_rel(struct parser *p, struct relation_node *rel) {
@@ -256,12 +349,13 @@ void parse_type(struct parser *p, struct instruction_node *instr) {
 	struct token token;
 
 	parser_current(p, &token);
-	instr->type = TYPE_STATEMENT;
-	instr->type_statement.type = enum_type(token.value);
-	DEBUG("Parsed type: %s : %s", token.value, show_token_type(token.type));
+
+	// instr->type_statement.type = enum_type(token.value);
 	parser_advance(p);
 
 	parse_assign(p, instr);
+
+	instr->type = TYPE_STATEMENT;
 
 	parser_current(p, &token);
 	if (token.type != EOL_) {
@@ -269,6 +363,8 @@ void parse_type(struct parser *p, struct instruction_node *instr) {
 		      show_token_type(token.type));
 	}
 	parser_advance(p);
+
+	DEBUG("Parsed type: %s : %s", token.value, show_token_type(token.type));
 }
 
 void parse_if(struct parser *p, struct instruction_node *instr) {

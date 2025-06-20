@@ -85,6 +85,9 @@ cppcheck:
 
 run: $(PROGRAM)
 	./$(PROGRAM) -i main.lance -o out/main.c
+	
+verbose: $(PROGRAM)
+	./$(PROGRAM) --verbose -i main.lance -o out/main.c
 
 debug: $(PROGRAM)
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=valgrind.supp ./$(PROGRAM) -i main.lance -o out/main.c
