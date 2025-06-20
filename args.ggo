@@ -23,3 +23,4 @@ versiontext "versiontext needed (optional)"
 option "input" i "file to input" string typestr="filename" required
 option "output" o "file to output" string typestr="filename" required
 option  "accept"  a  "accept all" flag off
+option "verbose" - "Enable verbose mode" flag off

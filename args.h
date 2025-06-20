@@ -47,12 +47,15 @@ struct gengetopt_args_info
   const char *output_help; /**< @brief file to output help description.  */
   int accept_flag;	/**< @brief accept all (default=off).  */
   const char *accept_help; /**< @brief accept all help description.  */
+  int verbose_flag;	/**< @brief Enable verbose mode (default=off).  */
+  const char *verbose_help; /**< @brief Enable verbose mode help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int input_given ;	/**< @brief Whether input was given.  */
   unsigned int output_given ;	/**< @brief Whether output was given.  */
   unsigned int accept_given ;	/**< @brief Whether accept was given.  */
+  unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
 
 } ;
 

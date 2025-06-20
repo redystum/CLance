@@ -39,6 +39,7 @@ const char *gengetopt_args_info_help[] = {
   "  -i, --input=filename   file to input",
   "  -o, --output=filename  file to output",
   "  -a, --accept           accept all  (default=off)",
+  "      --verbose          Enable verbose mode  (default=off)",
     0
 };
 
@@ -70,6 +71,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->input_given = 0 ;
   args_info->output_given = 0 ;
   args_info->accept_given = 0 ;
+  args_info->verbose_given = 0 ;
 }
 
 static
@@ -81,6 +83,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->output_arg = NULL;
   args_info->output_orig = NULL;
   args_info->accept_flag = 0;
+  args_info->verbose_flag = 0;
   
 }
 
@@ -94,6 +97,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->input_help = gengetopt_args_info_help[2] ;
   args_info->output_help = gengetopt_args_info_help[3] ;
   args_info->accept_help = gengetopt_args_info_help[4] ;
+  args_info->verbose_help = gengetopt_args_info_help[5] ;
   
 }
 
@@ -227,6 +231,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "output", args_info->output_orig, 0);
   if (args_info->accept_given)
     write_into_file(outfile, "accept", 0, 0 );
+  if (args_info->verbose_given)
+    write_into_file(outfile, "verbose", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -513,6 +519,7 @@ cmdline_parser_internal (
         { "input",	1, NULL, 'i' },
         { "output",	1, NULL, 'o' },
         { "accept",	0, NULL, 'a' },
+        { "verbose",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -568,6 +575,20 @@ cmdline_parser_internal (
           break;
 
         case 0:	/* Long option with no short option */
+          /* Enable verbose mode.  */
+          if (strcmp (long_options[option_index].name, "verbose") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->verbose_flag), 0, &(args_info->verbose_given),
+                &(local_args_info.verbose_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "verbose", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          
+          break;
         case '?':	/* Invalid option.  */
           /* `getopt_long' already printed an error message.  */
           goto failure;

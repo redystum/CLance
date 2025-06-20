@@ -15,6 +15,8 @@ void replace(char* str, char* orig, char* rep);
 bool starts_with(const char* a, const char* b);
 ssize_t find_str(const char* str, const char* substr);
 
+int verbose_enabled = 0;
+
 int main(int argc, char* argv[])
 {
     struct gengetopt_args_info args;
@@ -23,6 +25,8 @@ int main(int argc, char* argv[])
         ERROR(1, "Error parsing command line");
         return 1;
     }
+
+    verbose_enabled = args.verbose_flag; // Enable verbose mode if --verbose is passed
 
     char* input = args.input_arg;
     char* output_arg = args.output_arg;
