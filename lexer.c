@@ -92,7 +92,7 @@ void skip_whitespace(struct lexer* l, struct token* last_token)
         lexer_read_char(l);
     }
 
-    if (last_token->type == EOL_ && l->ch == EOL) {
+    if (last_token != NULL && last_token->type == EOL_ && l->ch == EOL) {
         lexer_read_char(l);
         skip_whitespace(l, last_token);
     }
@@ -226,11 +226,10 @@ struct token lexer_next_token(struct lexer* l, struct token* last_token)
 
 int lexer_tokenize(char* buffer, unsigned int len, ut_dynamic_array_t* tokens)
 {
-
     struct lexer lexer;
-    lexer_init(&lexer, (char*)buffer, len);
+    lexer_init(&lexer, buffer, len);
 
-    struct token tok;
+    struct token tok = {0}; 
     do {
         tok = lexer_next_token(&lexer, &tok);
         ut_array_push(tokens, &tok);

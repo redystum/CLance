@@ -71,21 +71,20 @@ Doxyfile:
 depend:
 	$(CC) -MM *.c
 
-# entry 'indent' requires the application indent (sudo apt-get install indent)
 indent:
 	indent $(IFLAGS) *.c *.h
 
 # entry to run the pmccabe utility (computes the "complexity" of the code)
-# Requires the application pmccabe (sudo apt-get install pmccabe)
 pmccabe:
 	pmccabe -v *.c
 
 # entry to run the cppcheck tool
 cppcheck:
-	cppcheck --enable=all --verbose *.c *.h
+	cppcheck --enable=all --verbose --suppress=missingIncludeSystem *.c *.h
+
 
 run: $(PROGRAM)
 	./$(PROGRAM) -i main.lance -o out/main.c
 
 debug: $(PROGRAM)
-	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./$(PROGRAM) -i main.lance -o out/main.c
+	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=valgrind.supp ./$(PROGRAM) -i main.lance -o out/main.c

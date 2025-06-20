@@ -131,12 +131,12 @@ void ut_file_log_close()
 
 void ut_string_slice_original(ut_string_slice_t* str_slice, char** str)
 {
-    *str = malloc(sizeof(char) * (str_slice->len) + 1);
+    *str = malloc(sizeof(char) * (str_slice->len + 1));
     if (*str == NULL) {
         ERROR(1, "Error allocating memory for string slice");
     }
 
-    memcpy(*str, str_slice->str, sizeof(char) * (str_slice->len));
+    memcpy(*str, str_slice->str, sizeof(char) * str_slice->len);
     (*str)[str_slice->len] = '\0';
 }
 

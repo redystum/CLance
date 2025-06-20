@@ -414,8 +414,7 @@ void parse_program(struct parser* p, struct program_node* program)
 
     struct token token;
     do {
-
-        struct instruction_node instr;
+        struct instruction_node instr = {0};
 
         parse_instr(p, &instr);
         ut_array_push(&program->instructions, &instr);

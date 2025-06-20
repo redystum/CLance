@@ -26,7 +26,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    verbose_enabled = args.verbose_flag; // Enable verbose mode if --verbose is passed
+    verbose_enabled = args.verbose_flag;
+
+    #ifdef DEBUG_ENABLED
+        verbose_enabled = 1;
+    #endif
 
     char* input = args.input_arg;
     char* output_arg = args.output_arg;
@@ -39,7 +43,10 @@ int main(int argc, char* argv[])
         }
     }
 
-    char* output = malloc(strlen(output_arg) + 5);
+    char* output = malloc(strlen(output_arg) + 6);
+    if (output == NULL) {
+        ERROR(1, "Failed to allocate memory for output path");
+    }
     sprintf(output, "./out/%s", output_arg);
 
     if (access(output, F_OK) != -1) {
@@ -50,8 +57,9 @@ int main(int argc, char* argv[])
             char c;
             scanf(" %c", &c);
             if (c != 'y') {
-                printf("Exiting...\n");
+                INFO("Exiting...\n");
                 cmdline_parser_free(&args);
+                free(output); 
                 return 0;
             }
         }
@@ -63,17 +71,21 @@ int main(int argc, char* argv[])
     if ((length = ut_read_file(input, &buffer)) == -1) {
         ERROR(1, "Error reading input file");
     }
-    printf("Read %d bytes from %s\n", length, input);
+    INFO("Read %d bytes from %s\n", length, input);
 
     ut_dynamic_array_t tokens;
     ut_array_init(&tokens, sizeof(struct token));
 
     lexer_tokenize(buffer, length, &tokens);
 
-    for (unsigned int i = 0; i < tokens.len; i++) {
-        struct token* t = ut_array_get(&tokens, i);
-        print_token(t);
+    if (verbose_enabled) {
+        for (unsigned int i = 0; i < tokens.len; i++) {
+            struct token* t = ut_array_get(&tokens, i);
+            print_token(t);
+        }
     }
+
+    INFO("Tokenized %d tokens\n", tokens.len);
 
     struct parser p;
     struct program_node program;
@@ -85,10 +97,41 @@ int main(int argc, char* argv[])
 
     parse_program(&p, &program);
 
-    print_instructions(&program.instructions, 0);
-    printf("Parsed program with %d instructions\n", program.instructions.len);
+    if (verbose_enabled) {
+        print_instructions(&program.instructions, 0);
+    }
+    INFO("Parsed program with %d instructions\n", program.instructions.len);
     
 
+
+
+/*
+ * Free Zone :)
+ */
+    for (unsigned int i = 0; i < program.instructions.len; i++) {
+        struct instruction_node* instr = ut_array_get(&program.instructions, i);
+        if (instr->type == IF_STATEMENT && instr->if_statement.body != NULL) {
+            free(instr->if_statement.body);
+        }
+    }
+    ut_array_free(&program.instructions);
+
+    for (unsigned int i = 0; i < types_dict.len; i++) {
+        struct type_dict* type = ut_array_get(&types_dict, i);
+        free(type->name);
+    }
+    ut_array_free(&types_dict);
+
+    for (unsigned int i = 0; i < tokens.len; i++) {
+        struct token* t = ut_array_get(&tokens, i);
+        free(t->value);
+    }
+    ut_array_free(&tokens);
+
     cmdline_parser_free(&args);
+    free(output);
+    free(buffer);
+    ut_array_free(&tokens);
+    ut_array_free(&types_dict);
     return 0;
 }
