@@ -51,6 +51,10 @@ struct gengetopt_args_info
   const char *verbose_help; /**< @brief Enable verbose mode help description.  */
   int format_flag;	/**< @brief Auto indent output file (default=off).  */
   const char *format_help; /**< @brief Auto indent output file help description.  */
+  int build_flag;	/**< @brief Build the program (default=off).  */
+  const char *build_help; /**< @brief Build the program help description.  */
+  int run_flag;	/**< @brief Run the program (default=off).  */
+  const char *run_help; /**< @brief Run the program help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -59,6 +63,8 @@ struct gengetopt_args_info
   unsigned int accept_given ;	/**< @brief Whether accept was given.  */
   unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
   unsigned int format_given ;	/**< @brief Whether format was given.  */
+  unsigned int build_given ;	/**< @brief Whether build was given.  */
+  unsigned int run_given ;	/**< @brief Whether run was given.  */
 
 } ;
 

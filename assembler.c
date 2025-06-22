@@ -12,13 +12,6 @@
     " * Date: " __DATE__ " " __TIME__ "\n" \
     " */\n\n"
 
-#define DEFAULT_INCLUDES \
-    "#include <stdio.h>\n" \
-	"#include <stdlib.h>\n" \
-    "#include <string.h>\n" \
-	"#include <errno.h>\n" \
-	"#include <limits.h>\n\n"
-
 void program_asm(struct program_node *program, FILE *file,
 		 ut_dynamic_array_t instructions_list) {
 
@@ -110,6 +103,8 @@ void instructions_functions(FILE *file, ut_dynamic_array_t instructions_list) {
 		fwrite((const void *)funcs_h, sizeof(char),
 		       strlen(funcs_h), file);
 		free(funcs_h);
+
+		fwrite("\n\n", sizeof(char), 2, file);
 	}
 
 	if (funcs != NULL) {

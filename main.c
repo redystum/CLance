@@ -36,6 +36,8 @@ int main(int argc, char *argv[]) {
 	char *output_arg = args.output_arg;
 	bool accept = args.accept_flag;
 	bool indent = args.format_flag;
+	bool build = args.build_flag;
+	bool run = args.run_flag;
 
 	// check if ./out exists if not create it
 	if (access("./out", F_OK) == -1) {
@@ -119,8 +121,6 @@ int main(int argc, char *argv[]) {
 	DEBUG("Output file closed: %s", output);
 
 	if (indent){
-		INFO("Running formater on output file...\n");
-		
 		char *cmd = NULL;
 		ut_str_cat(&cmd, "indent ", output, " -o ", output, " -linux -brs -brf -br", NULL);
 		DEBUG("Running command: %s", cmd);
@@ -128,8 +128,47 @@ int main(int argc, char *argv[]) {
 		if (ret != 0) {
 			ERROR(1, "Error running formater on output file");
 		}
-		DEBUG("Formater finished successfully");	
+		DEBUG("Formater finished successfully");
+		
+		INFO("Output file formatted successfully\n");
 	}
+
+	if (build) {
+		char *cmd = NULL;
+		char *dot_c = strrchr(output_arg, '.');
+		if (dot_c != NULL) {
+			*dot_c = '\0'; // remove the .c
+		}
+		
+		ut_str_cat(&cmd, "gcc -o ./out/", output_arg, " ", output, NULL);
+		DEBUG("Running command: %s", cmd);
+		int ret = system(cmd);
+		if (ret != 0) {
+			ERROR(1, "Error building output file");
+		}
+		DEBUG("Build finished successfully");
+
+		INFO("Output file built successfully\n");
+	}
+
+	if (run) {
+		char *cmd = NULL;
+		char *dot_c = strrchr(output_arg, '.');
+		if (dot_c != NULL) {
+			*dot_c = '\0'; // remove the .c
+		}
+		ut_str_cat(&cmd, "./out/", output_arg, NULL);
+		DEBUG("Running command: %s", cmd);
+		int ret = system(cmd);
+		if (ret != 0) {
+			ERROR(1, "Error running output file");
+		}
+		DEBUG("Run finished successfully");
+
+		INFO("Output file ran successfully\n");
+	}
+
+
 
 
 /*

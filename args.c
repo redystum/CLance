@@ -41,6 +41,8 @@ const char *gengetopt_args_info_help[] = {
   "  -a, --accept           accept all  (default=off)",
   "      --verbose          Enable verbose mode  (default=off)",
   "  -f, --format           Auto indent output file  (default=off)",
+  "  -b, --build            Build the program  (default=off)",
+  "  -r, --run              Run the program  (default=off)",
     0
 };
 
@@ -74,6 +76,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->accept_given = 0 ;
   args_info->verbose_given = 0 ;
   args_info->format_given = 0 ;
+  args_info->build_given = 0 ;
+  args_info->run_given = 0 ;
 }
 
 static
@@ -87,6 +91,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->accept_flag = 0;
   args_info->verbose_flag = 0;
   args_info->format_flag = 0;
+  args_info->build_flag = 0;
+  args_info->run_flag = 0;
   
 }
 
@@ -102,6 +108,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->accept_help = gengetopt_args_info_help[4] ;
   args_info->verbose_help = gengetopt_args_info_help[5] ;
   args_info->format_help = gengetopt_args_info_help[6] ;
+  args_info->build_help = gengetopt_args_info_help[7] ;
+  args_info->run_help = gengetopt_args_info_help[8] ;
   
 }
 
@@ -239,6 +247,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "verbose", 0, 0 );
   if (args_info->format_given)
     write_into_file(outfile, "format", 0, 0 );
+  if (args_info->build_given)
+    write_into_file(outfile, "build", 0, 0 );
+  if (args_info->run_given)
+    write_into_file(outfile, "run", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -527,10 +539,12 @@ cmdline_parser_internal (
         { "accept",	0, NULL, 'a' },
         { "verbose",	0, NULL, 0 },
         { "format",	0, NULL, 'f' },
+        { "build",	0, NULL, 'b' },
+        { "run",	0, NULL, 'r' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVi:o:af", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVi:o:afbr", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -586,6 +600,26 @@ cmdline_parser_internal (
           if (update_arg((void *)&(args_info->format_flag), 0, &(args_info->format_given),
               &(local_args_info.format_given), optarg, 0, 0, ARG_FLAG,
               check_ambiguity, override, 1, 0, "format", 'f',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'b':	/* Build the program.  */
+        
+        
+          if (update_arg((void *)&(args_info->build_flag), 0, &(args_info->build_given),
+              &(local_args_info.build_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "build", 'b',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'r':	/* Run the program.  */
+        
+        
+          if (update_arg((void *)&(args_info->run_flag), 0, &(args_info->run_given),
+              &(local_args_info.run_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "run", 'r',
               additional_error))
             goto failure;
         

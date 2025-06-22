@@ -25,3 +25,5 @@ option "output" o "file to output" string typestr="filename" required
 option "accept"  a  "accept all" flag off
 option "verbose" - "Enable verbose mode" flag off
 option "format" f "Auto indent output file" flag off
+option "build" b "Build the program" flag off
+option "run" r "Run the program" flag off

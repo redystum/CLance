@@ -90,5 +90,8 @@ run: $(PROGRAM)
 verbose: $(PROGRAM)
 	./$(PROGRAM) --verbose -i main.lance -o main.c -a -f
 
+build: $(PROGRAM)
+	./$(PROGRAM) -i main.lance -o main.c -a -f -b -r
+
 debug: $(PROGRAM)
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=valgrind.supp ./$(PROGRAM) -i main.lance -o out/main.c

@@ -1,6 +1,13 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+#define DEFAULT_INCLUDES \
+    "#include <stdio.h>\n" \
+	"#include <stdlib.h>\n" \
+    "#include <string.h>\n" \
+	"#include <errno.h>\n" \
+	"#include <limits.h>\n\n"
+    
 #define INPUT_INT_HEADER "int input_int(const char *prompt);\n"
 #define INPUT_INT "int input_int(const char *prompt) {"\
 "    char buffer[100];"\
