@@ -215,7 +215,7 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 	struct term_node left, right;
 
 	parse_term(p, &left);
-	
+
 	parser_current(p, &token);
 	if (token.type == INPUT) {
 		parser_advance(p);
@@ -257,7 +257,7 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 			}
 
 			parser_advance(p);
-			parser_current(p, &token);				
+			parser_current(p, &token);
 			parse_term(p, &right);
 
 			exp->add.left = left;
@@ -288,7 +288,8 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 	      instr->type_statement.type);
 
 	if (instr->type_statement.type != NULL_TYPE) {
-		DEBUG("Type already set for identifier '%s', skipping type assignment",
+		DEBUG
+		    ("Type already set for identifier '%s', skipping type assignment",
 		     instr->assign.identifier);
 		struct type_dict new_type = {
 			.name = instr->assign.identifier,
@@ -296,7 +297,8 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 		};
 		ut_array_push(&p->types_dict, &new_type);
 	} else {
-		DEBUG("Type not set for identifier '%s', searching in types dictionary",
+		DEBUG
+		    ("Type not set for identifier '%s', searching in types dictionary",
 		     instr->assign.identifier);
 		int found = 0;
 		for (unsigned int i = 0; i < p->types_dict.len; i++) {
@@ -385,6 +387,14 @@ void parse_type(struct parser *p, struct instruction_node *instr) {
 	parse_assign(p, instr);
 
 	instr->type = TYPE_STATEMENT;
+
+	if (instr->assign.expression.type == INPUT_EXPRESSION) {
+		add_to_instructions_list(p, &(struct instruction_node) {
+					 .type = INPUT_STATEMENT,
+					 .type_statement.type =
+					 instr->type_statement.type,
+					 });
+	}
 
 	parser_current(p, &token);
 	if (token.type != EOL_) {
@@ -594,10 +604,12 @@ void parse_program(struct parser *p, struct program_node *program) {
 }
 
 void parser_init(ut_dynamic_array_t tokens,
-		 ut_dynamic_array_t types_dict, struct parser *p) {
+		 ut_dynamic_array_t types_dict,
+		 ut_dynamic_array_t instructions_list, struct parser *p) {
 	p->tokens = tokens;
 	p->index = 0;
 	p->types_dict = types_dict;
+	p->instructions_list = instructions_list;
 }
 
 void parser_current(struct parser *p, struct token *token) {
@@ -614,4 +626,24 @@ struct token *parser_peek(struct parser *p) {
 	} else {
 		return NULL;
 	}
+}
+
+void add_to_instructions_list(struct parser *p, struct instruction_node *instr) {
+	for (unsigned int i = 0; i < p->instructions_list.len; i++) {
+		struct instruction_list_element *elem =
+		    ut_array_get(&p->instructions_list, i);
+		if (elem->instruction == instr->type) {
+			DEBUG("Instruction already in list: %s",
+			      show_instruction_type(instr->type));
+			return;
+		}
+	}
+
+	struct instruction_list_element elem = {.instruction =
+		    instr->type,.type = instr->type_statement.type
+	};
+	ut_array_push(&p->instructions_list, &elem);
+	DEBUG("Added instruction to instructions list: %s, type: %s",
+	      show_instruction_type(instr->type),
+	      show_types(instr->type_statement.type));
 }

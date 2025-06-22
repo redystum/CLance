@@ -93,8 +93,11 @@ int main(int argc, char *argv[]) {
 
 	ut_dynamic_array_t types_dict;
 	ut_array_init(&types_dict, sizeof(struct type_dict));
+	
+	ut_dynamic_array_t instructions_list;
+	ut_array_init(&instructions_list, sizeof(struct instruction_list_element));
 
-	parser_init(tokens, types_dict, &p);
+	parser_init(tokens, types_dict, instructions_list, &p);
 
 	parse_program(&p, &program);
 
@@ -110,7 +113,7 @@ int main(int argc, char *argv[]) {
 
 	DEBUG("Output file opened: %s", output);
 
-	program_asm(&program, file);
+	program_asm(&program, file, p.instructions_list);
 
 	fclose(file);
 	DEBUG("Output file closed: %s", output);

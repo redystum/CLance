@@ -1,7 +1,8 @@
+#include <stdio.h>
 #include "assembler.h"
 #include "parser.h"
 #include "utils.h"
-#include <stdio.h>
+#include "functions.h"
 
 #define DEFAULT_HEADER \
     "/* \n" \
@@ -13,20 +14,18 @@
 
 #define DEFAULT_INCLUDES \
     "#include <stdio.h>\n" \
-				// "#include <stdlib.h>\n" \
-    // "#include <string.h>"
+	"#include <stdlib.h>\n" \
+    "#include <string.h>\n" \
+	"#include <errno.h>\n" \
+	"#include <limits.h>\n\n"
 
-void program_asm(struct program_node *program, FILE *file) {
+void program_asm(struct program_node *program, FILE *file,
+		 ut_dynamic_array_t instructions_list) {
 
-	DEBUG("Creating default program header");
-	char *header = NULL;
-	ut_str_cat(&header, DEFAULT_HEADER, DEFAULT_INCLUDES, NULL);
-	fwrite((const void *)header, sizeof(char), strlen(header), file);
-	free(header);
-	fwrite("\n\n", sizeof(char), 2, file);
-	DEBUG("Program header created");
+	program_header(file);
+	instructions_functions(file, instructions_list);
 
-	DEBUG("Assembling program with %d instructions",
+	DEBUG("\nAssembling program with %d instructions",
 	      program->instructions.len);
 
 	int main = 0;
@@ -51,12 +50,82 @@ void program_asm(struct program_node *program, FILE *file) {
 	}
 }
 
+void program_header(FILE *file) {
+	DEBUG("Creating default program header");
+	char *header = NULL;
+	ut_str_cat(&header, DEFAULT_HEADER, DEFAULT_INCLUDES, NULL);
+	fwrite((const void *)header, sizeof(char), strlen(header), file);
+	free(header);
+	fwrite("\n\n", sizeof(char), 2, file);
+	DEBUG("Program header created");
+}
+
+void instructions_functions(FILE *file, ut_dynamic_array_t instructions_list) {
+	DEBUG("Adding default functions to program, count: %d",
+	      instructions_list.len);
+
+	char *funcs_h = NULL;
+	char *funcs = NULL;
+
+	for (unsigned int i = 0; i < instructions_list.len; i++) {
+		struct instruction_list_element *elem =
+		    ut_array_get(&instructions_list, i);
+		DEBUG("Processing instruction: %s: %d",
+		      show_instruction_type(elem->instruction), elem->type);
+		switch (elem->instruction) {
+		case INPUT_STATEMENT:{
+				switch (elem->type) {
+				case INT_TYPE:
+					ut_str_cat(&funcs_h, INPUT_INT_HEADER,
+						   NULL);
+					ut_str_cat(&funcs, INPUT_INT, NULL);
+					break;
+				case STRING_TYPE:
+					ut_str_cat(&funcs_h,
+						   INPUT_STRING_HEADER, NULL);
+					ut_str_cat(&funcs, INPUT_STRING, NULL);
+					break;
+				case NULL_TYPE:
+				case VOID_TYPE:
+				case UNKNOWN_TYPE:
+					break;
+				}
+				break;
+			}
+			break;
+		case INSTRUCTION:
+		case ASSIGN:
+		case RETURN_STATEMENT:
+		case IF_STATEMENT:
+		case PRINT_STATEMENT:
+		case END_STATEMENT:
+		case DIRECTIVE_STATEMENT:
+		case TYPE_STATEMENT:
+		case EOL_STATEMENT:
+			break;
+		}
+	}
+
+	if (funcs_h != NULL) {
+		fwrite((const void *)funcs_h, sizeof(char),
+		       strlen(funcs_h), file);
+		free(funcs_h);
+	}
+
+	if (funcs != NULL) {
+		fwrite((const void *)funcs, sizeof(char), strlen(funcs), file);
+		free(funcs);
+	}
+
+	DEBUG("Default functions added");
+}
+
 void instr_asm(struct instruction_node *instr, FILE *f) {
 	switch (instr->type) {
 	case INSTRUCTION:
 		break;
 	case ASSIGN:
-    asm_assign(instr, f);
+		asm_assign(instr, f);
 		break;
 	case RETURN_STATEMENT:
 		break;
@@ -109,7 +178,7 @@ void asm_print(struct instruction_node *instr, FILE *f) {
 		if (instr->print_statement.term.value == NULL) {
 			ERROR(1, "INT_TERM value is NULL");
 		}
-		fprintf(f, "printf(\"%%d\", %s);\n",
+		fprintf(f, "printf(\"%%d\\n\", %s);\n",
 			instr->print_statement.term.value);
 		break;
 	case IDENTIFIER_TERM:
@@ -131,8 +200,6 @@ void asm_type(struct instruction_node *instr, FILE *f) {
 				if (instr->assign.identifier == NULL) {
 					ERROR(1, "INT_TYPE identifier is NULL");
 				}
-				fprintf(f, "int %s;\n",
-					instr->assign.identifier);
 
 				char *prompt =
 				    instr->assign.expression.input.prompt;
@@ -140,23 +207,26 @@ void asm_type(struct instruction_node *instr, FILE *f) {
 					ERROR(1,
 					      "Input prompt is NULL for INT_TYPE");
 				}
-				fprintf(f, "printf(\"%s\");\n", prompt);
-				fprintf(f, "scanf(\" %%d\", &%s);\n",
-					instr->assign.identifier);
+
+				fprintf(f, "int %s = ", instr->assign.identifier);
+
+				fprintf(f, INPUT_INT_CALLER_FMT, prompt);
 			} else if (instr->assign.expression.type ==
 				   TERM_EXPRESSION) {
 				fprintf(f, "int %s = %s;\n",
 					instr->assign.identifier,
 					instr->assign.expression.term.value);
 			} else if (instr->assign.expression.type ==
-                    PLUS_EXPRESSION) {
-                fprintf(f, "int %s = %s + %s;\n",
-                    instr->assign.identifier,
-                    instr->assign.expression.add.left.value,
-                    instr->assign.expression.add.right.value);
-            } else {
-                ERROR(1, "Unknown expression type for INT_TYPE");
-            }
+				   PLUS_EXPRESSION) {
+				fprintf(f, "int %s = %s + %s;\n",
+					instr->assign.identifier,
+					instr->assign.expression.add.left.value,
+					instr->assign.expression.add.right.
+					value);
+			} else {
+				ERROR(1,
+				      "Unknown expression type for INT_TYPE");
+			}
 
 			break;
 		}
@@ -170,33 +240,32 @@ void asm_type(struct instruction_node *instr, FILE *f) {
 }
 
 void asm_assign(struct instruction_node *instr, FILE *f) {
-    if (instr->assign.identifier == NULL) {
-        ERROR(1, "Assign identifier is NULL");
-    }
+	if (instr->assign.identifier == NULL) {
+		ERROR(1, "Assign identifier is NULL");
+	}
 
-    switch (instr->assign.expression.type) {
-    case INPUT_EXPRESSION:
-        fprintf(f, "scanf(\" %%d\", &%s);\n",
-            instr->assign.identifier);
-        break;
-    case TERM_EXPRESSION:
-        if (instr->assign.expression.term.value == NULL) {
-            ERROR(1, "TERM_EXPRESSION value is NULL");
-        }
-        fprintf(f, "%s = %s;\n", instr->assign.identifier,
-            instr->assign.expression.term.value);
-        break;
-    case PLUS_EXPRESSION:
-        if (instr->assign.expression.add.left.value == NULL ||
-            instr->assign.expression.add.right.value == NULL) {
-            ERROR(1, "PLUS_EXPRESSION values are NULL");
-        }
-        fprintf(f, "%s = %s + %s;\n", instr->assign.identifier,
-            instr->assign.expression.add.left.value,
-            instr->assign.expression.add.right.value);
-        break;
-    default:
-        ERROR(1, "Unknown expression type: %d",
-              instr->assign.expression.type);
-    }
+	switch (instr->assign.expression.type) {
+	case INPUT_EXPRESSION:
+		// TODO: Handle INPUT_EXPRESSION (maybe call this from type)
+		break;
+	case TERM_EXPRESSION:
+		if (instr->assign.expression.term.value == NULL) {
+			ERROR(1, "TERM_EXPRESSION value is NULL");
+		}
+		fprintf(f, "%s = %s;\n", instr->assign.identifier,
+			instr->assign.expression.term.value);
+		break;
+	case PLUS_EXPRESSION:
+		if (instr->assign.expression.add.left.value == NULL ||
+		    instr->assign.expression.add.right.value == NULL) {
+			ERROR(1, "PLUS_EXPRESSION values are NULL");
+		}
+		fprintf(f, "%s = %s + %s;\n", instr->assign.identifier,
+			instr->assign.expression.add.left.value,
+			instr->assign.expression.add.right.value);
+		break;
+	default:
+		ERROR(1, "Unknown expression type: %d",
+		      instr->assign.expression.type);
+	}
 }

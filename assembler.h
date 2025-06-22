@@ -7,7 +7,9 @@
 #include "string.h"
 
 
-void program_asm(struct program_node *program, FILE *file);
+void program_asm(struct program_node *program, FILE *file, ut_dynamic_array_t instructions_list);
+void program_header(FILE *file);
+void instructions_functions(FILE *file, ut_dynamic_array_t instructions_list);
 void instr_asm(struct instruction_node *instr, FILE *file);
 void asm_directive(struct instruction_node *instr, FILE *file);
 void asm_print(struct instruction_node *instr, FILE *f);

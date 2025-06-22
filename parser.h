@@ -114,6 +114,13 @@ struct instruction_node {
 	// };
 };
 
+struct instruction_list_element {
+	enum intruction_type instruction;
+	union {
+		enum types type;
+	};
+};
+
 struct program_node {
 	ut_dynamic_array_t instructions;
 };
@@ -127,6 +134,7 @@ struct parser {
 	ut_dynamic_array_t tokens;
 	unsigned int index;
 	ut_dynamic_array_t types_dict;
+	ut_dynamic_array_t instructions_list;
 };
 
 void parser_current(struct parser *p, struct token *token);
@@ -143,8 +151,11 @@ void parse_return(struct parser *p, struct instruction_node *instr);
 void parse_program(struct parser *p, struct program_node *program);
 void parse_directive(struct parser *p, struct instruction_node *instr);
 void parse_type(struct parser *p, struct instruction_node *instr);
-void parser_init(ut_dynamic_array_t tokens, ut_dynamic_array_t types_dict,
+void parser_init(ut_dynamic_array_t tokens,
+		 ut_dynamic_array_t types_dict, ut_dynamic_array_t instructions_list,
 		 struct parser *p);
 void print_instructions(ut_dynamic_array_t * instructions, unsigned int deep);
 struct token* parser_peek(struct parser *p);
+void add_to_instructions_list(struct parser *p, struct instruction_node *instr);
+const char *show_instruction_type(enum intruction_type type);
 #endif				// PARSER_H
