@@ -85,10 +85,10 @@ cppcheck:
 
 
 run: $(PROGRAM)
-	./$(PROGRAM) -i main.lance -o main.c -a
+	./$(PROGRAM) -i main.lance -o main.c -a -f
 	
 verbose: $(PROGRAM)
-	./$(PROGRAM) --verbose -i main.lance -o main.c -a
+	./$(PROGRAM) --verbose -i main.lance -o main.c -a -f
 
 debug: $(PROGRAM)
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=valgrind.supp ./$(PROGRAM) -i main.lance -o out/main.c

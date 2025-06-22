@@ -141,7 +141,7 @@ void asm_type(struct instruction_node *instr, FILE *f) {
 					      "Input prompt is NULL for INT_TYPE");
 				}
 				fprintf(f, "printf(\"%s\");\n", prompt);
-				fprintf(f, "scanf(\"%%d\", &%s);\n",
+				fprintf(f, "scanf(\" %%d\", &%s);\n",
 					instr->assign.identifier);
 			} else if (instr->assign.expression.type ==
 				   TERM_EXPRESSION) {
@@ -176,7 +176,7 @@ void asm_assign(struct instruction_node *instr, FILE *f) {
 
     switch (instr->assign.expression.type) {
     case INPUT_EXPRESSION:
-        fprintf(f, "scanf(\"%%d\", &%s);\n",
+        fprintf(f, "scanf(\" %%d\", &%s);\n",
             instr->assign.identifier);
         break;
     case TERM_EXPRESSION:

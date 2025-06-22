@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
 	char *input = args.input_arg;
 	char *output_arg = args.output_arg;
 	bool accept = args.accept_flag;
+	bool indent = args.format_flag;
 
 	// check if ./out exists if not create it
 	if (access("./out", F_OK) == -1) {
@@ -113,6 +114,19 @@ int main(int argc, char *argv[]) {
 
 	fclose(file);
 	DEBUG("Output file closed: %s", output);
+
+	if (indent){
+		INFO("Running formater on output file...\n");
+		
+		char *cmd = NULL;
+		ut_str_cat(&cmd, "indent ", output, " -o ", output, " -linux -brs -brf -br", NULL);
+		DEBUG("Running command: %s", cmd);
+		int ret = system(cmd);
+		if (ret != 0) {
+			ERROR(1, "Error running formater on output file");
+		}
+		DEBUG("Formater finished successfully");	
+	}
 
 
 /*
