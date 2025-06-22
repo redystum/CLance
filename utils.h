@@ -179,6 +179,15 @@ void ut_replace_text(char **logs, size_t *len, const char *old_text,
  */
 void print_w_deep(unsigned int deep, const char *format, ...);
 
+/*
+ * Allocates memory with size `size`
+ *
+ * @param size the size of the memory to allocate
+ *
+ * @return a pointer to the allocated memory
+ */
+void* ut_allocator_malloc(size_t size);
+
 void error(char *file, int line, int code, char *fmt, ...);
 void warning(char *format, ...);
 void info(char *format, ...);

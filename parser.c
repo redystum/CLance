@@ -116,6 +116,9 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 		case PRINT_STATEMENT:
 			print_w_deep(deep, " - Print Statement: %s\n",
 				     inst->print_statement.term.value);
+			print_w_deep(deep,
+				     " - Term Type: %d\n",
+				     inst->print_statement.term.type);
 			break;
 		case INPUT_STATEMENT:
 			print_w_deep(deep,
@@ -212,16 +215,9 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 	struct term_node left, right;
 
 	parse_term(p, &left);
-
+	
 	parser_current(p, &token);
-	if (token.type == PLUS) {
-		parser_advance(p);
-		parse_term(p, &right);
-
-		exp->add.left = left;
-		exp->add.right = right;
-		exp->type = PLUS_EXPRESSION;
-	} else if (token.type == INPUT) {
+	if (token.type == INPUT) {
 		parser_advance(p);
 
 		parser_current(p, &token);
@@ -237,7 +233,7 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 			      show_token_type(token.type));
 		}
 
-        exp->type = INPUT_EXPRESSION;
+		exp->type = INPUT_EXPRESSION;
 		exp->input.prompt = token.value;
 
 		parser_advance(p);
@@ -248,8 +244,29 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 			      show_token_type(token.type));
 		}
 	} else {
-		exp->type = TERM_EXPRESSION;
-		exp->term = left;
+		struct token *next = parser_peek(p);
+
+		if (next->type == PLUS) {
+			DEBUG("Found PLUS token, parsing addition expression");
+
+			parser_advance(p);
+			parser_current(p, &token);
+			if (token.type != PLUS) {
+				ERROR(1, "Expected '+', got %s",
+				      show_token_type(token.type));
+			}
+
+			parser_advance(p);
+			parser_current(p, &token);				
+			parse_term(p, &right);
+
+			exp->add.left = left;
+			exp->add.right = right;
+			exp->type = PLUS_EXPRESSION;
+		} else {
+			exp->type = TERM_EXPRESSION;
+			exp->term = left;
+		}
 	}
 	parser_advance(p);
 
@@ -265,19 +282,22 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 	instr->assign.identifier = token.value;
 	parser_advance(p);
 
-    DEBUG("Parsing assignment for identifier '%s', type %s : %d", instr->assign.identifier, show_types(instr->type_statement.type), instr->type_statement.type);
+	DEBUG("Parsing assignment for identifier '%s', type %s : %d",
+	      instr->assign.identifier,
+	      show_types(instr->type_statement.type),
+	      instr->type_statement.type);
 
 	if (instr->type_statement.type != NULL_TYPE) {
-        DEBUG("Type already set for identifier '%s', skipping type assignment",
-              instr->assign.identifier);
+		DEBUG("Type already set for identifier '%s', skipping type assignment",
+		     instr->assign.identifier);
 		struct type_dict new_type = {
 			.name = instr->assign.identifier,
 			.type = instr->type_statement.type
 		};
 		ut_array_push(&p->types_dict, &new_type);
 	} else {
-        DEBUG("Type not set for identifier '%s', searching in types dictionary",
-              instr->assign.identifier);
+		DEBUG("Type not set for identifier '%s', searching in types dictionary",
+		     instr->assign.identifier);
 		int found = 0;
 		for (unsigned int i = 0; i < p->types_dict.len; i++) {
 			struct type_dict *type =
@@ -294,10 +314,10 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 			      instr->assign.identifier);
 		}
 
-        DEBUG("Found type for identifier '%s': %s : %d",
-              instr->assign.identifier,
-              show_types(instr->type_statement.type),
-              instr->type_statement.type);
+		DEBUG("Found type for identifier '%s': %s : %d",
+		      instr->assign.identifier,
+		      show_types(instr->type_statement.type),
+		      instr->type_statement.type);
 	}
 
 	parser_current(p, &token);
@@ -312,7 +332,9 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 	// todo: check if the expression type matches the identifier type
 
 	DEBUG("Parsed assignment for identifier '%s', type %s : %d",
-	      instr->assign.identifier, show_types(instr->type_statement.type), instr->type_statement.type);
+	      instr->assign.identifier,
+	      show_types(instr->type_statement.type),
+	      instr->type_statement.type);
 }
 
 void parse_rel(struct parser *p, struct relation_node *rel) {
@@ -413,8 +435,8 @@ void parse_if(struct parser *p, struct instruction_node *instr) {
 	instr->if_statement.body = if_body;
 
 	parser_current(p, &token);
-	DEBUG("Current token after body is %s, %i", show_token_type(token.type),
-	      token.type);
+	DEBUG("Current token after body is %s, %i",
+	      show_token_type(token.type), token.type);
 
 	if (token.type != CLOSE_BRACKET) {
 		ERROR(1, "if: Expected '}', got %s",
@@ -544,12 +566,12 @@ void parse_instr(struct parser *p, struct instruction_node *instr) {
 		ERROR(1, "Invalid token encountered: %s",
 		      token.value ? token.value : "NULL");
 	} else {
-		ERROR(1, "Unexpected token: %s %i", show_token_type(token.type),
-		      token.type);
+		ERROR(1, "Unexpected token: %s %i",
+		      show_token_type(token.type), token.type);
 	}
 
-	DEBUG("Parsed instruction of type %d, token type %s\n", instr->type,
-	      show_token_type(token.type));
+	DEBUG("Parsed instruction of type %d, token type %s\n",
+	      instr->type, show_token_type(token.type));
 }
 
 void parse_program(struct parser *p, struct program_node *program) {
@@ -571,8 +593,8 @@ void parse_program(struct parser *p, struct program_node *program) {
 	} while (token.type != END);
 }
 
-void parser_init(ut_dynamic_array_t tokens, ut_dynamic_array_t types_dict,
-		 struct parser *p) {
+void parser_init(ut_dynamic_array_t tokens,
+		 ut_dynamic_array_t types_dict, struct parser *p) {
 	p->tokens = tokens;
 	p->index = 0;
 	p->types_dict = types_dict;
@@ -584,4 +606,12 @@ void parser_current(struct parser *p, struct token *token) {
 
 void parser_advance(struct parser *p) {
 	p->index++;
+}
+
+struct token *parser_peek(struct parser *p) {
+	if (p->index + 1 < p->tokens.len) {
+		return (struct token *)ut_array_get(&p->tokens, p->index + 1);
+	} else {
+		return NULL;
+	}
 }

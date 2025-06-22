@@ -365,3 +365,11 @@ void print_w_deep(unsigned int deep, const char *format, ...) {
 	vprintf(format, args);
 	va_end(args);
 }
+
+void* ut_allocator_malloc(size_t size) {
+	void *ptr = malloc(size);
+	if (ptr == NULL) {
+		ERROR(1, "Memory allocation failed for size %zu", size);
+	}
+	return ptr;
+}

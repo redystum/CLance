@@ -8,5 +8,6 @@ if (input("Enter a number: ") > b) {
 }
 
 print("sum = ${a+b}")
+print(a)
 
 return 0;

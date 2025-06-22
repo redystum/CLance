@@ -117,7 +117,7 @@ struct token lexer_next_token(struct lexer *l, struct token *last_token) {
 		return (struct token) {.type = EQUAL,.value = NULL };
 	} else if (l->ch == '+') {
 		lexer_read_char(l);
-		return (struct token) {.type = EQUAL,.value = NULL };
+		return (struct token) {.type = PLUS,.value = NULL };
 	} else if (l->ch == '<') {
 		lexer_read_char(l);
 		return (struct token) {.type = LESS_THAN,.value = NULL };

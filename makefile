@@ -18,7 +18,7 @@ PROGRAM=lance
 PROGRAM_OPT=args
 
 ## Object files required to build the executable
-PROGRAM_OBJS=main.o utils.o lexer.o parser.o $(PROGRAM_OPT).o
+PROGRAM_OBJS=main.o utils.o lexer.o parser.o assembler.o $(PROGRAM_OPT).o
 
 # Clean and all are not files
 .PHONY: clean all docs indent debugon
@@ -45,6 +45,7 @@ $(PROGRAM_OPT).o: $(PROGRAM_OPT).c $(PROGRAM_OPT).h
 utils.o: utils.c utils.h
 lexer.o: lexer.c lexer.h utils.h
 parser.o: parser.c parser.h utils.h
+assembler.o: assembler.c assembler.h utils.h
 
 # disable warnings from gengetopt generated files
 $(PROGRAM_OPT).o: $(PROGRAM_OPT).c $(PROGRAM_OPT).h
@@ -84,10 +85,10 @@ cppcheck:
 
 
 run: $(PROGRAM)
-	./$(PROGRAM) -i main.lance -o out/main.c
+	./$(PROGRAM) -i main.lance -o main.c -a
 	
 verbose: $(PROGRAM)
-	./$(PROGRAM) --verbose -i main.lance -o out/main.c
+	./$(PROGRAM) --verbose -i main.lance -o main.c -a
 
 debug: $(PROGRAM)
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=valgrind.supp ./$(PROGRAM) -i main.lance -o out/main.c

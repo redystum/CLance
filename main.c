@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "args.h"
+#include "assembler.h"
 #include "lexer.h"
 #include "parser.h"
 #include "utils.h"
@@ -101,9 +102,23 @@ int main(int argc, char *argv[]) {
 	}
 	INFO("Parsed program with %d instructions\n", program.instructions.len);
 
+	FILE *file = fopen(output, "w");
+	if (file == NULL) {
+		ERROR(1, "Error opening output file %s", output);
+	}
+
+	DEBUG("Output file opened: %s", output);
+
+	program_asm(&program, file);
+
+	fclose(file);
+	DEBUG("Output file closed: %s", output);
+
+
 /*
  * Free Zone :)
  */
+
 	for (unsigned int i = 0; i < program.instructions.len; i++) {
 		struct instruction_node *instr =
 		    ut_array_get(&program.instructions, i);

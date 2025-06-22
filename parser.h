@@ -146,4 +146,5 @@ void parse_type(struct parser *p, struct instruction_node *instr);
 void parser_init(ut_dynamic_array_t tokens, ut_dynamic_array_t types_dict,
 		 struct parser *p);
 void print_instructions(ut_dynamic_array_t * instructions, unsigned int deep);
+struct token* parser_peek(struct parser *p);
 #endif				// PARSER_H
