@@ -46,11 +46,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	char *output = malloc(strlen(output_arg) + 6);
+	char *output = malloc(strlen(output_arg) + 6 + 2); // "./out/" + output_arg + '.c'
 	if (output == NULL) {
 		ERROR(1, "Failed to allocate memory for output path");
 	}
-	sprintf(output, "./out/%s", output_arg);
+	sprintf(output, "./out/%s.c", output_arg);
 
 	if (access(output, F_OK) != -1) {
 		printf("Output file already exists. Overwrite? (y/N)\n");
@@ -133,12 +133,8 @@ int main(int argc, char *argv[]) {
 		INFO("Output file formatted successfully\n");
 	}
 
-	if (build) {
+	if (build || run) {
 		char *cmd = NULL;
-		char *dot_c = strrchr(output_arg, '.');
-		if (dot_c != NULL) {
-			*dot_c = '\0'; // remove the .c
-		}
 		
 		ut_str_cat(&cmd, "gcc -o ./out/", output_arg, " ", output, NULL);
 		DEBUG("Running command: %s", cmd);
@@ -153,10 +149,6 @@ int main(int argc, char *argv[]) {
 
 	if (run) {
 		char *cmd = NULL;
-		char *dot_c = strrchr(output_arg, '.');
-		if (dot_c != NULL) {
-			*dot_c = '\0'; // remove the .c
-		}
 		ut_str_cat(&cmd, "./out/", output_arg, NULL);
 		DEBUG("Running command: %s", cmd);
 		int ret = system(cmd);

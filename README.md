@@ -5,28 +5,31 @@ CLance is a **simple programming language compiler** written in C. It translates
 
 - **Lexer**: Tokenizes `.lance` source files.
 - **Parser**: Builds an abstract syntax tree (AST) from tokens.
-- **Compiler**: Converts `.lance` code to C.
+- **Assembler**: Generates C code from the AST.
 - **Automatic Build**: Instantly compiles generated C code with `gcc`.
 - **Command-line Options**:
     - `-i, --input`: Input `.lance` file
     - `-o, --output`: Output C file
     - `-a, --accept`: Auto-accept file overwrites
+    - `-f, --format`: Format `.lance` code
+    - `-b, --build`: Build the project
+    - `-r, --run`: Run the compiled program
     - `--verbose`: Verbose/debug mode
 
 ---
 
 ## Installation
 
-   ```sh
-   git clone https://github.com/redystum/CLance.git
-   cd CLance
-   make
-   ```
+```sh
+git clone https://github.com/redystum/CLance.git
+cd CLance
+make
+```
 
 ## Usage
 
 ```sh
-./lance -i <input_file.lance> -o <output_file.c>
+./lance [options] -i <input_file.lance> -o <output_file_name.c>
 ```
 
 ### Example
@@ -46,10 +49,11 @@ return 0;
 
 **Compile and run:**
 ```sh
-./lance -i main.lance -o out/main.c
+./lance -i main.lance -o my_program -r
 ```
-- Generates `out/main.c`
+- Generates `out/my_program.c`
 - Compiles it with `gcc` automatically
+- Runs the resulting executable `my_program`
 
 ---
 
@@ -58,6 +62,7 @@ return 0;
 - `main.c` — Entry point
 - `lexer.c`/`lexer.h` — Lexer
 - `parser.c`/`parser.h` — Parser/AST
+- `assembler.c`/`assembler.h` — C code generator
 - `utils.c`/`utils.h` — Utilities (strings, logging, arrays)
 - `args.c`/`args.h` — Command-line parsing (via `gengetopt`)
 
@@ -69,6 +74,7 @@ return 0;
 - `make clean` — Clean artifacts
 - `make run` — Build & run with defaults
 - `make debug` — Build & run with valgrind
+- `make build` — Build & run, build & run the output file
 
 ## License
 
