@@ -588,6 +588,7 @@ void parse_program(struct parser *p, struct program_node *program) {
 	ut_array_init(&program->instructions, sizeof(struct instruction_node));
 
 	struct token token;
+	struct instruction_node last_instr;
 	do {
 		struct instruction_node instr = { 0 };
 
@@ -596,11 +597,12 @@ void parse_program(struct parser *p, struct program_node *program) {
 
 		parser_current(p, &token);
 
-		if (instr.type == END_STATEMENT) {
-			break;
-		}
+		INFO("Current token after instruction is %s, %i",
+		      show_token_type(token.type), token.type);
 
-	} while (token.type != END);
+		last_instr.type = instr.type;
+
+	} while (last_instr.type != END_STATEMENT);
 }
 
 void parser_init(ut_dynamic_array_t tokens,

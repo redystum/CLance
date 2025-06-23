@@ -21,7 +21,11 @@ void program_asm(struct program_node *program, FILE *file,
 	DEBUG("\nAssembling program with %d instructions",
 	      program->instructions.len);
 
-	int main = 0;
+	program_asm_loop(program, file, 0);
+
+}
+
+void program_asm_loop(struct program_node *program, FILE *file, int main) {
 	for (unsigned int i = 0; i < program->instructions.len; i++) {
 		struct instruction_node *instr =
 		    ut_array_get(&program->instructions, i);
@@ -33,13 +37,6 @@ void program_asm(struct program_node *program, FILE *file,
 		}
 
 		instr_asm(instr, file);
-	}
-
-	if (main == 1) {
-		fprintf(file, "return 0;\n}\n");
-		DEBUG("Inserted main function end");
-	} else {
-		DEBUG("No END_STATEMENT found, not inserting main function");
 	}
 }
 
@@ -117,21 +114,21 @@ void instructions_functions(FILE *file, ut_dynamic_array_t instructions_list) {
 
 void instr_asm(struct instruction_node *instr, FILE *f) {
 	switch (instr->type) {
-	case INSTRUCTION:
-		break;
 	case ASSIGN:
 		asm_assign(instr, f);
 		break;
 	case RETURN_STATEMENT:
+		asm_return(instr, f);
 		break;
 	case IF_STATEMENT:
+		asm_if(instr, f);
 		break;
 	case PRINT_STATEMENT:
 		asm_print(instr, f);
 		break;
-	case INPUT_STATEMENT:
-		break;
 	case END_STATEMENT:
+		fwrite("}\n", sizeof(char), 2, f);
+		DEBUG("Assembled END_STATEMENT, closing function");
 		break;
 	case DIRECTIVE_STATEMENT:
 		asm_directive(instr, f);
@@ -139,6 +136,9 @@ void instr_asm(struct instruction_node *instr, FILE *f) {
 	case TYPE_STATEMENT:
 		asm_type(instr, f);
 		break;
+
+	case INSTRUCTION:
+	case INPUT_STATEMENT:
 	case EOL_STATEMENT:
 		break;
 	}
@@ -191,38 +191,8 @@ void asm_print(struct instruction_node *instr, FILE *f) {
 void asm_type(struct instruction_node *instr, FILE *f) {
 	switch (instr->type_statement.type) {
 	case INT_TYPE:{
-			if (instr->assign.expression.type == INPUT_EXPRESSION) {
-				if (instr->assign.identifier == NULL) {
-					ERROR(1, "INT_TYPE identifier is NULL");
-				}
-
-				char *prompt =
-				    instr->assign.expression.input.prompt;
-				if (prompt == NULL) {
-					ERROR(1,
-					      "Input prompt is NULL for INT_TYPE");
-				}
-
-				fprintf(f, "int %s = ", instr->assign.identifier);
-
-				fprintf(f, INPUT_INT_CALLER_FMT, prompt);
-			} else if (instr->assign.expression.type ==
-				   TERM_EXPRESSION) {
-				fprintf(f, "int %s = %s;\n",
-					instr->assign.identifier,
-					instr->assign.expression.term.value);
-			} else if (instr->assign.expression.type ==
-				   PLUS_EXPRESSION) {
-				fprintf(f, "int %s = %s + %s;\n",
-					instr->assign.identifier,
-					instr->assign.expression.add.left.value,
-					instr->assign.expression.add.right.
-					value);
-			} else {
-				ERROR(1,
-				      "Unknown expression type for INT_TYPE");
-			}
-
+			fwrite("int ", sizeof(char), 4, f);
+			asm_assign(instr, f);
 			break;
 		}
 	case STRING_TYPE:
@@ -241,7 +211,19 @@ void asm_assign(struct instruction_node *instr, FILE *f) {
 
 	switch (instr->assign.expression.type) {
 	case INPUT_EXPRESSION:
-		// TODO: Handle INPUT_EXPRESSION (maybe call this from type)
+		if (instr->assign.identifier == NULL) {
+			ERROR(1, "Assign identifier is NULL");
+		}
+
+		char *prompt = instr->assign.expression.input.prompt;
+		if (prompt == NULL) {
+			ERROR(1, "Input prompt is NULL for Assign");
+		}
+
+		fprintf(f, "%s = ", instr->assign.identifier);
+
+		fprintf(f, INPUT_INT_CALLER_FMT, prompt);
+
 		break;
 	case TERM_EXPRESSION:
 		if (instr->assign.expression.term.value == NULL) {
@@ -262,5 +244,56 @@ void asm_assign(struct instruction_node *instr, FILE *f) {
 	default:
 		ERROR(1, "Unknown expression type: %d",
 		      instr->assign.expression.type);
+	}
+}
+
+void asm_if(struct instruction_node *instr, FILE *f) {
+
+	switch (instr->if_statement.rel.type) {
+
+	case GREATER_THAN_RELATION:{
+			if (instr->if_statement.rel.greater_than.left.value ==
+			    NULL
+			    || instr->if_statement.rel.greater_than.right.
+			    value == NULL) {
+				ERROR(1,
+				      "GREATER_THAN_RELATION values are NULL");
+			}
+			fprintf(f, "if (%s > %s) {\n",
+				instr->if_statement.rel.greater_than.left.value,
+				instr->if_statement.rel.greater_than.right.
+				value);
+			if (instr->if_statement.body != NULL
+			    && instr->if_statement.body->instructions.len > 0) {
+				program_asm_loop(instr->if_statement.body, f,
+						 1);
+			}
+			break;
+		}
+	}
+}
+
+void asm_return(struct instruction_node *instr, FILE *f) {
+	switch (instr->return_statement.expression.type) {
+
+	case TERM_EXPRESSION:
+		if (instr->return_statement.expression.term.value == NULL) {
+			ERROR(1, "TERM_EXPRESSION value is NULL");
+		}
+		fprintf(f, "return %s;\n",
+			instr->return_statement.expression.term.value);
+		break;
+	case PLUS_EXPRESSION:
+		if (instr->return_statement.expression.add.left.value == NULL ||
+		    instr->return_statement.expression.add.right.value ==
+		    NULL) {
+			ERROR(1, "PLUS_EXPRESSION values are NULL");
+		}
+		fprintf(f, "return %s + %s;\n",
+			instr->return_statement.expression.add.left.value,
+			instr->return_statement.expression.add.right.value);
+		break;
+	case INPUT_EXPRESSION:
+		break;
 	}
 }

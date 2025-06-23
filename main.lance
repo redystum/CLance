@@ -8,9 +8,9 @@ b = 9
 int c = 5 + 3 // simple addition
 
 if (a > b) {
-    print("a is greater than b\n")
+    print("input is greater than b\n")
 }
 
 print(123)
 
-return 0;
+return 0 + 0;
