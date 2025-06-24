@@ -110,13 +110,13 @@ struct directive_node {
 struct instruction_node {
 	enum intruction_type type;
 	// union {
-		struct assign_node assign;
-		struct if_node if_statement;
-		struct print_node print_statement;
-		struct return_node return_statement;
-		struct input_node input_statement;
-		struct type_node type_statement;
-		struct directive_node directive_statement;
+	struct assign_node assign;
+	struct if_node if_statement;
+	struct print_node print_statement;
+	struct return_node return_statement;
+	struct input_node input_statement;
+	struct type_node type_statement;
+	struct directive_node directive_statement;
 	// };
 };
 
@@ -159,7 +159,7 @@ void parse_type(struct parser *p, struct instruction_node *instr);
 void parser_init(ut_dynamic_array_t tokens,
 		 ut_dynamic_array_t types_dict, struct parser *p);
 void print_instructions(ut_dynamic_array_t * instructions, unsigned int deep);
-struct token* parser_peek(struct parser *p);
+struct token *parser_peek(struct parser *p);
 const char *show_instruction_type(enum intruction_type type);
 enum types enum_type(char *term);
 #endif				// PARSER_H

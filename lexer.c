@@ -46,8 +46,6 @@ const char *show_token_type(enum token_type type) {
 		return "INVALID";
 	case END:
 		return "END";
-	case EOL_:
-		return "EOL";
 	}
 	return "UNKNOWN";
 }
@@ -82,14 +80,9 @@ char lexer_read_char(struct lexer *l) {
 	return l->ch;
 }
 
-void skip_whitespace(struct lexer *l, struct token *last_token) {
-	while (isspace(l->ch) && l->ch != EOL) {
+void skip_whitespace(struct lexer *l) {
+	while (isspace(l->ch)) {
 		lexer_read_char(l);
-	}
-
-	if (last_token != NULL && last_token->type == EOL_ && l->ch == EOL) {
-		lexer_read_char(l);
-		skip_whitespace(l, last_token);
 	}
 }
 
@@ -103,15 +96,15 @@ void lexer_init(struct lexer *l, char *buffer, unsigned int buffer_len) {
 	lexer_read_char(l);
 }
 
-struct token lexer_next_token(struct lexer *l, struct token *last_token) {
-	skip_whitespace(l, last_token);
+struct token lexer_next_token(struct lexer *l) {
+	skip_whitespace(l);
 
 	if (l->ch == EOF) {
 		lexer_read_char(l);
 		return (struct token) {.type = END,.value = NULL };
-	} else if (l->ch == EOL) {
+	} else if (l->ch == EOL || l->ch == ';') {
 		lexer_read_char(l);
-		return (struct token) {.type = EOL_,.value = NULL };
+		return lexer_next_token(l);
 	} else if (l->ch == '=') {
 		lexer_read_char(l);
 		return (struct token) {.type = EQUAL,.value = NULL };
@@ -188,15 +181,12 @@ struct token lexer_next_token(struct lexer *l, struct token *last_token) {
 			char next_char = lexer_peek_char(l, 1);
 			if (next_char != EOL && next_char != EOF
 			    && (isalnum(next_char) || next_char == '_')) {
-				return (struct token) {.type = TYPE,.value =
-					    val };
+				return (struct token) {.type = TYPE,.value = val
+				};
 			}
 
 			return (struct token) {.type = IDENT,.value = val };
 		}
-	} else if (l->ch == ';') {
-		lexer_read_char(l);
-		return (struct token) {.type = EOL_,.value = NULL };
 	} else if (l->ch == '/') {
 		lexer_read_char(l);
 		if (l->ch == '/') {
@@ -210,7 +200,7 @@ struct token lexer_next_token(struct lexer *l, struct token *last_token) {
 			}
 			lexer_read_char(l);
 		}
-		return lexer_next_token(l, last_token);
+		return lexer_next_token(l);
 	} else {
 		ut_string_slice_t slice = {.str = l->buffer + l->pos,.len = 1 };
 		char *value = NULL;
@@ -226,7 +216,7 @@ int lexer_tokenize(char *buffer, unsigned int len, ut_dynamic_array_t *tokens) {
 
 	struct token tok = { 0 };
 	do {
-		tok = lexer_next_token(&lexer, &tok);
+		tok = lexer_next_token(&lexer);
 		ut_array_push(tokens, &tok);
 	} while (tok.type != END);
 

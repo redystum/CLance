@@ -24,7 +24,6 @@ enum token_type {
 	RETURN,
 	INVALID,
 	END,
-	EOL_
 };
 
 typedef struct token {
@@ -44,9 +43,9 @@ const char *show_token_type(enum token_type type);
 void print_token(token_t * token);
 char lexer_peek_char(struct lexer *l, int skip_whitespace);
 char lexer_read_char(struct lexer *l);
-void skip_whitespace(struct lexer *l, struct token *last_token);
+void skip_whitespace(struct lexer *l);
 void lexer_init(struct lexer *l, char *buffer, unsigned int buffer_len);
-struct token lexer_next_token(struct lexer *l, struct token *last_token);
+struct token lexer_next_token(struct lexer *l);
 int lexer_tokenize(char *buffer, unsigned int len, ut_dynamic_array_t * tokens);
 
 #endif

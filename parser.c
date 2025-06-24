@@ -58,38 +58,56 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			print_w_deep(deep,
 				     " - If Statement with relation type: %d\n",
 				     inst->if_statement.rel.type);
-			if (inst->if_statement.rel.type == GREATER_THAN_RELATION) {
+			if (inst->if_statement.rel.type ==
+			    GREATER_THAN_RELATION) {
 				print_w_deep(deep, " - If Relation: ");
-				if (inst->if_statement.rel.greater_than.left.type == INPUT_TERM) {
+				if (inst->if_statement.rel.greater_than.left.
+				    type == INPUT_TERM) {
 					printf("%s input(\"%s\")",
-						show_types(inst->if_statement.rel.greater_than.left.input.type),
-						inst->if_statement.rel.greater_than.left.input.input ? 
-							inst->if_statement.rel.greater_than.left.input.input->prompt : "NULL");
+					       show_types(inst->if_statement.
+							  rel.greater_than.left.
+							  input.type),
+					       inst->if_statement.rel.
+					       greater_than.left.input.
+					       input ? inst->if_statement.rel.
+					       greater_than.left.input.input->
+					       prompt : "NULL");
 				} else {
-					printf("%s", inst->if_statement.rel.greater_than.left.value ? 
-						inst->if_statement.rel.greater_than.left.value : "NULL");
+					printf("%s",
+					       inst->if_statement.rel.
+					       greater_than.left.value ? inst->
+					       if_statement.rel.greater_than.
+					       left.value : "NULL");
 				}
-                
+
 				printf(" > ");
-                
-				if (inst->if_statement.rel.greater_than.right.type == INPUT_TERM) {
+
+				if (inst->if_statement.rel.greater_than.right.
+				    type == INPUT_TERM) {
 					printf("%s input(\"%s\")\n",
-						show_types(inst->if_statement.rel.greater_than.right.input.type),
-						inst->if_statement.rel.greater_than.right.input.input ? 
-							inst->if_statement.rel.greater_than.right.input.input->prompt : "NULL");
+					       show_types(inst->if_statement.
+							  rel.greater_than.
+							  right.input.type),
+					       inst->if_statement.rel.
+					       greater_than.right.input.
+					       input ? inst->if_statement.rel.
+					       greater_than.right.input.input->
+					       prompt : "NULL");
 				} else {
-					printf("%s\n", inst->if_statement.rel.greater_than.right.value ? 
-						inst->if_statement.rel.greater_than.right.value : "NULL");
+					printf("%s\n",
+					       inst->if_statement.rel.
+					       greater_than.right.value ? inst->
+					       if_statement.rel.greater_than.
+					       right.value : "NULL");
 				}
 			}
-			
+
 			if (inst->if_statement.body != NULL
 			    && inst->if_statement.body->instructions.len > 0) {
 				print_w_deep(deep,
 					     " - If Body Instructions:\n");
-				print_instructions(&inst->if_statement.
-						   body->instructions,
-						   deep + 1);
+				print_instructions(&inst->if_statement.body->
+						   instructions, deep + 1);
 			}
 			break;
 
@@ -107,21 +125,21 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			case PLUS_EXPRESSION:
 				print_w_deep(deep,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.left.
-					     value,
-					     inst->assign.expression.add.right.
-					     value);
+					     inst->assign.expression.add.
+					     left.value,
+					     inst->assign.expression.add.
+					     right.value);
 				break;
 			case INPUT_EXPRESSION:
 				print_w_deep(deep,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.input.
-					     prompt);
+					     inst->assign.expression.
+					     input.prompt);
 				break;
 			case TERM_EXPRESSION:
 				print_w_deep(deep, " - Term Expression: %s\n",
-					     inst->assign.expression.term.
-					     value);
+					     inst->assign.expression.
+					     term.value);
 				break;
 			default:
 				print_w_deep(deep,
@@ -159,22 +177,22 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			case PLUS_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.left.
-					     value,
-					     inst->assign.expression.add.right.
-					     value);
+					     inst->assign.expression.add.
+					     left.value,
+					     inst->assign.expression.add.
+					     right.value);
 				break;
 			case INPUT_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.
-					     input.prompt);
+					     inst->assign.expression.input.
+					     prompt);
 				break;
 			case TERM_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Term Expression: %s\n",
-					     inst->assign.expression.term.
-					     value);
+					     inst->assign.expression.
+					     term.value);
 				break;
 			default:
 				print_w_deep(deep + 1,
@@ -229,7 +247,7 @@ void parse_term(struct parser *p, struct term_node *term) {
 			ERROR(1, "Memory allocation failed for input term");
 		}
 		term->input.input->prompt = token.value;
-		term->input.type = INT_TYPE; // Default to INT_TYPE for input
+		term->input.type = INT_TYPE;	// Default to INT_TYPE for input
 
 		parser_advance(p);
 
@@ -326,10 +344,10 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 	struct term_node left, right;
 
 	parser_current(p, &token);
-	
+
 	if (token.type == INPUT) {
 		exp->type = INPUT_EXPRESSION;
-		
+
 		parser_advance(p);
 		parser_current(p, &token);
 		if (token.type != OPEN_PAREN) {
@@ -423,12 +441,12 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 			}
 		}
 		if (!found) {
-			ERROR(1,
-			      "assign: Identifier '%s' not found in types dictionary",
+			instr->type_statement.type = INT_TYPE;
+			DEBUG("Type not found for '%s', defaulting to INT_TYPE",
 			      instr->assign.identifier);
 		}
 
-		DEBUG("Found type for identifier '%s': %s : %d",
+		DEBUG("Found/set type for identifier '%s': %s : %d",
 		      instr->assign.identifier,
 		      show_types(instr->type_statement.type),
 		      instr->type_statement.type);
@@ -443,15 +461,40 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 
 	parse_exp(p, &instr->assign.expression);
 
-	// todo: check if the expression type matches the identifier type
+	int found = 0;
+	for (unsigned int i = 0; i < p->types_dict.len; i++) {
+		struct type_dict *type = ut_array_get(&p->types_dict, i);
+		if (strcmp(type->name, instr->assign.identifier) == 0) {
+			found = 1;
+			break;
+		}
+	}
+
+	if (!found) {
+		enum types inferred_type = INT_TYPE;	// Default to INT_TYPE
+
+		if (instr->assign.expression.type == TERM_EXPRESSION) {
+			if (instr->assign.expression.term.type == STRING_TERM) {
+				inferred_type = STRING_TYPE;
+			}
+		}
+
+		struct type_dict new_type = {
+			.name = instr->assign.identifier,
+			.type = inferred_type
+		};
+		ut_array_push(&p->types_dict, &new_type);
+		instr->type_statement.type = inferred_type;
+		DEBUG("Added inferred type %s for identifier '%s'",
+		      show_types(inferred_type), instr->assign.identifier);
+	}
 
 	parser_advance(p);
 
 	DEBUG("Parsed assignment for identifier '%s', type %s : %d, value: %s",
 	      instr->assign.identifier,
 	      show_types(instr->type_statement.type),
-	      instr->type_statement.type,
-	      instr->assign.expression.term.value);
+	      instr->type_statement.type, instr->assign.expression.term.value);
 }
 
 void parse_rel(struct parser *p, struct relation_node *rel) {
@@ -501,9 +544,6 @@ void parse_type(struct parser *p, struct instruction_node *instr) {
 	parse_assign(p, instr);
 
 	instr->type = TYPE_STATEMENT;
-
-	parser_current(p, &token);
-	parser_advance(p);
 
 	DEBUG("Parsed type: %s : %s", token.value, show_token_type(token.type));
 }
@@ -664,9 +704,6 @@ void parse_instr(struct parser *p, struct instruction_node *instr) {
 		parse_if(p, instr);
 	} else if (token.type == RETURN) {
 		parse_return(p, instr);
-	} else if (token.type == EOL_) {
-		instr->type = EOL_STATEMENT;
-		parser_advance(p);
 	} else if (token.type == DIRECTIVE) {
 		parse_directive(p, instr);
 	} else if (token.type == CLOSE_BRACKET) {

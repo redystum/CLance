@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	char *output = malloc(strlen(output_arg) + 6 + 2); // "./out/" + output_arg + '.c'
+	char *output = malloc(strlen(output_arg) + 6 + 2);	// "./out/" + output_arg + '.c'
 	if (output == NULL) {
 		ERROR(1, "Failed to allocate memory for output path");
 	}
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
 	ut_dynamic_array_t types_dict;
 	ut_array_init(&types_dict, sizeof(struct type_dict));
-	
+
 	parser_init(tokens, types_dict, &p);
 
 	parse_program(&p, &program);
@@ -117,23 +117,26 @@ int main(int argc, char *argv[]) {
 	fclose(file);
 	DEBUG("Output file closed: %s", output);
 
-	if (indent){
+	if (indent) {
 		char *cmd = NULL;
-		ut_str_cat(&cmd, "indent ./out/*.c ./out/*.h -linux -brs -brf -br && rm ./out/*~", NULL);
+		ut_str_cat(&cmd,
+			   "indent ./out/*.c ./out/*.h -linux -brs -brf -br && rm ./out/*~",
+			   NULL);
 		DEBUG("Running command: %s", cmd);
 		int ret = system(cmd);
 		if (ret != 0) {
 			ERROR(1, "Error running formater on output file");
 		}
 		DEBUG("Formater finished successfully");
-		
+
 		INFO("Output file formatted successfully\n");
 	}
 
 	if (build || run) {
 		char *cmd = NULL;
-		
-		ut_str_cat(&cmd, "gcc -o ./out/", output_arg, " ", output, " ./out/", output_arg, "_funcs.c", NULL);
+
+		ut_str_cat(&cmd, "gcc -o ./out/", output_arg, " ", output,
+			   " ./out/", output_arg, "_funcs.c", NULL);
 		DEBUG("Running command: %s", cmd);
 		int ret = system(cmd);
 		if (ret != 0) {
@@ -158,9 +161,6 @@ int main(int argc, char *argv[]) {
 
 		INFO("\nOutput file ran successfully\n");
 	}
-
-
-
 
 /*
  * Free Zone :)

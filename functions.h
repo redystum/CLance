@@ -7,7 +7,7 @@
     "#include <string.h>\n" \
 	"#include <errno.h>\n" \
 	"#include <limits.h>\n\n"
-    
+
 #define INPUT_INT_HEADER "int input_int(const char *prompt);\n"
 #define INPUT_INT "int input_int(const char *prompt) {"\
 "    char buffer[100];"\
@@ -56,4 +56,4 @@
 
 #define INPUT_STRING_CALLER_FMT "ask_string(\"%s\");\n"
 
-#endif // FUNCTIONS_H
+#endif				// FUNCTIONS_H

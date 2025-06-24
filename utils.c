@@ -267,9 +267,9 @@ void *ut_array_get(ut_dynamic_array_t *arr, size_t index) {
 
 void ut_array_free(ut_dynamic_array_t *arr) {
 	if (arr->data != NULL) {
-        free(arr->data);
-        arr->data = NULL;
-    }
+		free(arr->data);
+		arr->data = NULL;
+	}
 	arr->len = 0;
 	arr->cap = 0;
 	arr->data = NULL;
@@ -366,7 +366,7 @@ void print_w_deep(unsigned int deep, const char *format, ...) {
 	va_end(args);
 }
 
-void* ut_allocator_malloc(size_t size) {
+void *ut_allocator_malloc(size_t size) {
 	void *ptr = malloc(size);
 	if (ptr == NULL) {
 		ERROR(1, "Memory allocation failed for size %zu", size);

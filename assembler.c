@@ -318,16 +318,16 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 			if (instr->if_statement.rel.greater_than.left.type ==
 			    INPUT_TERM) {
 				char *prompt =
-				    instr->if_statement.rel.greater_than.
-				    left.input.input->prompt;
+				    instr->if_statement.rel.greater_than.left.
+				    input.input->prompt;
 				if (prompt == NULL) {
 					ERROR(1,
 					      "Input prompt is NULL for If condition (left)");
 				}
 
 				enum types input_type =
-				    instr->if_statement.rel.greater_than.
-				    left.input.type;
+				    instr->if_statement.rel.greater_than.left.
+				    input.type;
 				switch (input_type) {
 				case INT_TYPE:
 					fprintf(f, "input_int(\"%s\")", prompt);
@@ -343,14 +343,14 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 					break;
 				}
 			} else {
-				if (instr->if_statement.rel.greater_than.
-				    left.value == NULL) {
+				if (instr->if_statement.rel.greater_than.left.
+				    value == NULL) {
 					ERROR(1,
 					      "Left term value is NULL in If condition");
 				}
 				fprintf(f, "%s",
-					instr->if_statement.rel.
-					greater_than.left.value);
+					instr->if_statement.rel.greater_than.
+					left.value);
 			}
 
 			fprintf(f, " > ");
@@ -358,16 +358,16 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 			if (instr->if_statement.rel.greater_than.right.type ==
 			    INPUT_TERM) {
 				char *prompt =
-				    instr->if_statement.rel.greater_than.
-				    right.input.input->prompt;
+				    instr->if_statement.rel.greater_than.right.
+				    input.input->prompt;
 				if (prompt == NULL) {
 					ERROR(1,
 					      "Input prompt is NULL for If condition (right)");
 				}
 
 				enum types input_type =
-				    instr->if_statement.rel.greater_than.
-				    right.input.type;
+				    instr->if_statement.rel.greater_than.right.
+				    input.type;
 				switch (input_type) {
 				case INT_TYPE:
 					fprintf(f, "input_int(\"%s\")", prompt);
@@ -381,14 +381,14 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 					break;
 				}
 			} else {
-				if (instr->if_statement.rel.greater_than.
-				    right.value == NULL) {
+				if (instr->if_statement.rel.greater_than.right.
+				    value == NULL) {
 					ERROR(1,
 					      "Right term value is NULL in If condition");
 				}
 				fprintf(f, "%s",
-					instr->if_statement.rel.
-					greater_than.right.value);
+					instr->if_statement.rel.greater_than.
+					right.value);
 			}
 
 			fprintf(f, ") {\n");
