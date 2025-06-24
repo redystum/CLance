@@ -58,15 +58,31 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			print_w_deep(deep,
 				     " - If Statement with relation type: %d\n",
 				     inst->if_statement.rel.type);
-			if (inst->if_statement.rel.type ==
-			    GREATER_THAN_RELATION) {
-				print_w_deep(deep,
-					     " - Greater Than Relation: %s > %s\n",
-					     inst->if_statement.
-					     rel.greater_than.left.value,
-					     inst->if_statement.
-					     rel.greater_than.right.value);
+			if (inst->if_statement.rel.type == GREATER_THAN_RELATION) {
+				print_w_deep(deep, " - If Relation: ");
+				if (inst->if_statement.rel.greater_than.left.type == INPUT_TERM) {
+					printf("%s input(\"%s\")",
+						show_types(inst->if_statement.rel.greater_than.left.input.type),
+						inst->if_statement.rel.greater_than.left.input.input ? 
+							inst->if_statement.rel.greater_than.left.input.input->prompt : "NULL");
+				} else {
+					printf("%s", inst->if_statement.rel.greater_than.left.value ? 
+						inst->if_statement.rel.greater_than.left.value : "NULL");
+				}
+                
+				printf(" > ");
+                
+				if (inst->if_statement.rel.greater_than.right.type == INPUT_TERM) {
+					printf("%s input(\"%s\")\n",
+						show_types(inst->if_statement.rel.greater_than.right.input.type),
+						inst->if_statement.rel.greater_than.right.input.input ? 
+							inst->if_statement.rel.greater_than.right.input.input->prompt : "NULL");
+				} else {
+					printf("%s\n", inst->if_statement.rel.greater_than.right.value ? 
+						inst->if_statement.rel.greater_than.right.value : "NULL");
+				}
 			}
+			
 			if (inst->if_statement.body != NULL
 			    && inst->if_statement.body->instructions.len > 0) {
 				print_w_deep(deep,
@@ -75,8 +91,8 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 						   body->instructions,
 						   deep + 1);
 			}
-
 			break;
+
 		case INSTRUCTION:
 			print_w_deep(deep, " - Instruction\n");
 
@@ -91,21 +107,21 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			case PLUS_EXPRESSION:
 				print_w_deep(deep,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.
-					     left.value,
-					     inst->assign.expression.add.
-					     right.value);
+					     inst->assign.expression.add.left.
+					     value,
+					     inst->assign.expression.add.right.
+					     value);
 				break;
 			case INPUT_EXPRESSION:
 				print_w_deep(deep,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.
-					     input.prompt);
+					     inst->assign.expression.input.
+					     prompt);
 				break;
 			case TERM_EXPRESSION:
 				print_w_deep(deep, " - Term Expression: %s\n",
-					     inst->assign.expression.
-					     term.value);
+					     inst->assign.expression.term.
+					     value);
 				break;
 			default:
 				print_w_deep(deep,
@@ -143,22 +159,22 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			case PLUS_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.
-					     left.value,
-					     inst->assign.expression.add.
-					     right.value);
+					     inst->assign.expression.add.left.
+					     value,
+					     inst->assign.expression.add.right.
+					     value);
 				break;
 			case INPUT_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.input.
-					     prompt);
+					     inst->assign.expression.
+					     input.prompt);
 				break;
 			case TERM_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Term Expression: %s\n",
-					     inst->assign.expression.
-					     term.value);
+					     inst->assign.expression.term.
+					     value);
 				break;
 			default:
 				print_w_deep(deep + 1,
@@ -188,38 +204,133 @@ void parse_term(struct parser *p, struct term_node *term) {
 	struct token token;
 
 	parser_current(p, &token);
-	if (token.type == INPUT) {
+
+	switch (token.type) {
+	case INPUT:
 		term->type = INPUT_TERM;
 		term->value = NULL;	// INPUT term does not have a value
-	} else if (token.type == INT) {
+
+		parser_advance(p);
+		parser_current(p, &token);
+
+		if (token.type != OPEN_PAREN) {
+			ERROR(1, "input: Expected '(', got %s",
+			      show_token_type(token.type));
+		}
+		parser_advance(p);
+
+		parser_current(p, &token);
+		if (token.type != STRING) {
+			ERROR(1, "input: Expected string prompt, got %s",
+			      show_token_type(token.type));
+		}
+		term->input.input = malloc(sizeof(struct term_input_node));
+		if (!term->input.input) {
+			ERROR(1, "Memory allocation failed for input term");
+		}
+		term->input.input->prompt = token.value;
+		term->input.type = INT_TYPE; // Default to INT_TYPE for input
+
+		parser_advance(p);
+
+		parser_current(p, &token);
+		if (token.type != CLOSE_PAREN) {
+			ERROR(1, "input: Expected ')', got %s",
+			      show_token_type(token.type));
+		}
+		break;
+	case INT:
 		term->type = INT_TERM;
 		term->value = token.value;
-	} else if (token.type == IDENT) {
+		break;
+	case IDENT:
 		term->type = IDENTIFIER_TERM;
 		term->value = token.value;
-	} else if (token.type == STRING) {
+		break;
+	case STRING:
 		term->type = STRING_TERM;
 		term->value = token.value;
-	} else {
+		break;
+	case TYPE:{
+			struct token *next = parser_peek(p);
+			if (next && next->type == INPUT) {
+				term->type = INPUT_TERM;
+				term->input.type = enum_type(token.value);
+
+				parser_advance(p);
+				parser_advance(p);
+
+				parser_current(p, &token);
+				if (token.type != OPEN_PAREN) {
+					ERROR(1, "input: Expected '(', got %s",
+					      show_token_type(token.type));
+				}
+				parser_advance(p);
+
+				parser_current(p, &token);
+				if (token.type != STRING) {
+					ERROR(1,
+					      "input: Expected string prompt, got %s",
+					      show_token_type(token.type));
+				}
+				term->input.input =
+				    malloc(sizeof(struct term_input_node));
+				if (!term->input.input) {
+					ERROR(1,
+					      "Memory allocation failed for input term");
+				}
+				term->input.input->prompt = token.value;
+				DEBUG("Parsed typed input with prompt: %s",
+				      token.value);
+
+				parser_advance(p);
+
+				parser_current(p, &token);
+				if (token.type != CLOSE_PAREN) {
+					ERROR(1, "input: Expected ')', got %s",
+					      show_token_type(token.type));
+				}
+			} else if (next && next->type == IDENT) {
+				// TODO int a = input() > x
+			} else {
+				ERROR(1, "Unexpected token after TYPE: %s",
+				      show_token_type(next->type));
+			}
+		}
+		break;
+
+	case OPEN_PAREN:
+		parser_advance(p);
+		parse_term(p, term);
+		parser_current(p, &token);
+		if (token.type != CLOSE_PAREN) {
+			ERROR(1, "term: Expected ')', got %s",
+			      show_token_type(token.type));
+		}
+		break;
+	case CLOSE_PAREN:
+		parser_advance(p);
+		break;
+	default:
 		ERROR(1,
-		      "term: Expected input, int, string or identifier, got %s",
+		      "Expected input, int, string or identifier, got %s",
 		      show_token_type(token.type));
+		break;
 	}
 
-	DEBUG("term: Parsed term with type %d and value '%s'", term->type,
-	      term->value ? term->value : "NULL");
+	DEBUG("Parsed term with type %d", term->type);
 }
 
 void parse_exp(struct parser *p, struct expression_node *exp) {
 	struct token token;
 	struct term_node left, right;
 
-	parse_term(p, &left);
-
 	parser_current(p, &token);
+	
 	if (token.type == INPUT) {
+		exp->type = INPUT_EXPRESSION;
+		
 		parser_advance(p);
-
 		parser_current(p, &token);
 		if (token.type != OPEN_PAREN) {
 			ERROR(1, "input: Expected '(', got %s",
@@ -233,7 +344,6 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 			      show_token_type(token.type));
 		}
 
-		exp->type = INPUT_EXPRESSION;
 		exp->input.prompt = token.value;
 
 		parser_advance(p);
@@ -244,9 +354,12 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 			      show_token_type(token.type));
 		}
 	} else {
+		parse_term(p, &left);
+
+		parser_current(p, &token);
 		struct token *next = parser_peek(p);
 
-		if (next->type == PLUS) {
+		if (next && next->type == PLUS) {
 			DEBUG("Found PLUS token, parsing addition expression");
 
 			parser_advance(p);
@@ -268,7 +381,6 @@ void parse_exp(struct parser *p, struct expression_node *exp) {
 			exp->term = left;
 		}
 	}
-	parser_advance(p);
 
 	DEBUG("Parsed expression with type %d", exp->type);
 }
@@ -333,10 +445,13 @@ void parse_assign(struct parser *p, struct instruction_node *instr) {
 
 	// todo: check if the expression type matches the identifier type
 
-	DEBUG("Parsed assignment for identifier '%s', type %s : %d",
+	parser_advance(p);
+
+	DEBUG("Parsed assignment for identifier '%s', type %s : %d, value: %s",
 	      instr->assign.identifier,
 	      show_types(instr->type_statement.type),
-	      instr->type_statement.type);
+	      instr->type_statement.type,
+	      instr->assign.expression.term.value);
 }
 
 void parse_rel(struct parser *p, struct relation_node *rel) {
@@ -344,8 +459,8 @@ void parse_rel(struct parser *p, struct relation_node *rel) {
 	struct term_node left, right;
 
 	parse_term(p, &left);
-	parser_advance(p);
 
+	parser_advance(p);
 	parser_current(p, &token);
 	if (token.type == GREATER_THAN) {
 		parser_advance(p);
@@ -359,7 +474,6 @@ void parse_rel(struct parser *p, struct relation_node *rel) {
 		      show_token_type(token.type), token.type);
 	}
 
-	parser_advance(p);
 	DEBUG("Parsed relation with type %d", rel->type);
 }
 
@@ -388,19 +502,7 @@ void parse_type(struct parser *p, struct instruction_node *instr) {
 
 	instr->type = TYPE_STATEMENT;
 
-	if (instr->assign.expression.type == INPUT_EXPRESSION) {
-		add_to_instructions_list(p, &(struct instruction_node) {
-					 .type = INPUT_STATEMENT,
-					 .type_statement.type =
-					 instr->type_statement.type,
-					 });
-	}
-
 	parser_current(p, &token);
-	if (token.type != EOL_) {
-		ERROR(1, "type: Expected end of line, got %s",
-		      show_token_type(token.type));
-	}
 	parser_advance(p);
 
 	DEBUG("Parsed type: %s : %s", token.value, show_token_type(token.type));
@@ -414,24 +516,23 @@ void parse_if(struct parser *p, struct instruction_node *instr) {
 
 	parser_current(p, &token);
 	if (token.type != OPEN_PAREN) {
-		ERROR(1, "if: Expected '(', got %s",
-		      show_token_type(token.type));
+		ERROR(1, "Expected '(', got %s", show_token_type(token.type));
 	}
 	parser_advance(p);
 
 	parse_rel(p, &instr->if_statement.rel);
 
+	parser_advance(p);
+
 	parser_current(p, &token);
 	if (token.type != CLOSE_PAREN) {
-		ERROR(1, "if: Expected ')', got %s",
-		      show_token_type(token.type));
+		ERROR(1, "Expected ')', got %s", show_token_type(token.type));
 	}
 	parser_advance(p);
 
 	parser_current(p, &token);
 	if (token.type != OPEN_BRACKET) {
-		ERROR(1, "if: Expected '{', got %s",
-		      show_token_type(token.type));
+		ERROR(1, "Expected '{', got %s", show_token_type(token.type));
 	}
 	parser_advance(p);
 
@@ -597,21 +698,16 @@ void parse_program(struct parser *p, struct program_node *program) {
 
 		parser_current(p, &token);
 
-		INFO("Current token after instruction is %s, %i",
-		      show_token_type(token.type), token.type);
-
 		last_instr.type = instr.type;
 
 	} while (last_instr.type != END_STATEMENT);
 }
 
 void parser_init(ut_dynamic_array_t tokens,
-		 ut_dynamic_array_t types_dict,
-		 ut_dynamic_array_t instructions_list, struct parser *p) {
+		 ut_dynamic_array_t types_dict, struct parser *p) {
 	p->tokens = tokens;
 	p->index = 0;
 	p->types_dict = types_dict;
-	p->instructions_list = instructions_list;
 }
 
 void parser_current(struct parser *p, struct token *token) {
@@ -628,24 +724,4 @@ struct token *parser_peek(struct parser *p) {
 	} else {
 		return NULL;
 	}
-}
-
-void add_to_instructions_list(struct parser *p, struct instruction_node *instr) {
-	for (unsigned int i = 0; i < p->instructions_list.len; i++) {
-		struct instruction_list_element *elem =
-		    ut_array_get(&p->instructions_list, i);
-		if (elem->instruction == instr->type) {
-			DEBUG("Instruction already in list: %s",
-			      show_instruction_type(instr->type));
-			return;
-		}
-	}
-
-	struct instruction_list_element elem = {.instruction =
-		    instr->type,.type = instr->type_statement.type
-	};
-	ut_array_push(&p->instructions_list, &elem);
-	DEBUG("Added instruction to instructions list: %s, type: %s",
-	      show_instruction_type(instr->type),
-	      show_types(instr->type_statement.type));
 }

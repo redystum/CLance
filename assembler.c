@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "assembler.h"
 #include "parser.h"
 #include "utils.h"
@@ -12,20 +13,30 @@
     " * Date: " __DATE__ " " __TIME__ "\n" \
     " */\n\n"
 
-void program_asm(struct program_node *program, FILE *file,
-		 ut_dynamic_array_t instructions_list) {
+void program_asm(struct program_node *program, FILE *file, char *output) {
 
-	program_header(file);
-	instructions_functions(file, instructions_list);
+	program_header(file, output);
+
+	ut_dynamic_array_t *used_functions;
+	ut_array_init(used_functions, sizeof(enum functions));
+	struct state s = {
+		.func_file_c = NULL,
+		.func_file_h = NULL,
+		.used_functions = *used_functions
+	};
+
+	functions_files(&s, output);
 
 	DEBUG("\nAssembling program with %d instructions",
 	      program->instructions.len);
 
-	program_asm_loop(program, file, 0);
+	program_asm_loop(&s, program, file, 0);
 
+	close_functions(&s);
 }
 
-void program_asm_loop(struct program_node *program, FILE *file, int main) {
+void program_asm_loop(struct state *s, struct program_node *program, FILE *file,
+		      int main) {
 	for (unsigned int i = 0; i < program->instructions.len; i++) {
 		struct instruction_node *instr =
 		    ut_array_get(&program->instructions, i);
@@ -36,105 +47,156 @@ void program_asm_loop(struct program_node *program, FILE *file, int main) {
 			main = 1;
 		}
 
-		instr_asm(instr, file);
+		instr_asm(s, instr, file);
 	}
 }
 
-void program_header(FILE *file) {
+void program_header(FILE *file, char *output) {
 	DEBUG("Creating default program header");
 	char *header = NULL;
-	ut_str_cat(&header, DEFAULT_HEADER, DEFAULT_INCLUDES, NULL);
+	ut_str_cat(&header, DEFAULT_HEADER, "#include \"", output,
+		   "_funcs.h\"\n", NULL);
 	fwrite((const void *)header, sizeof(char), strlen(header), file);
 	free(header);
 	fwrite("\n\n", sizeof(char), 2, file);
 	DEBUG("Program header created");
 }
 
-void instructions_functions(FILE *file, ut_dynamic_array_t instructions_list) {
-	DEBUG("Adding default functions to program, count: %d",
-	      instructions_list.len);
+void functions_files(struct state *s, char *output) {
+	DEBUG("Creating functions C file");
+	char *out = NULL;
+	ut_str_cat(&out, "./out/", output, "_funcs.c", NULL);
+	s->func_file_c = strdup(out);
+	FILE *f = fopen(out, "w");
+	if (f == NULL) {
+		ERROR(1, "Could not open functions.c for writing");
+	}
 
-	char *funcs_h = NULL;
-	char *funcs = NULL;
+	DEBUG("Functions C file opened: %s", out);
 
-	for (unsigned int i = 0; i < instructions_list.len; i++) {
-		struct instruction_list_element *elem =
-		    ut_array_get(&instructions_list, i);
-		DEBUG("Processing instruction: %s: %d",
-		      show_instruction_type(elem->instruction), elem->type);
-		switch (elem->instruction) {
-		case INPUT_STATEMENT:{
-				switch (elem->type) {
-				case INT_TYPE:
-					ut_str_cat(&funcs_h, INPUT_INT_HEADER,
-						   NULL);
-					ut_str_cat(&funcs, INPUT_INT, NULL);
-					break;
-				case STRING_TYPE:
-					ut_str_cat(&funcs_h,
-						   INPUT_STRING_HEADER, NULL);
-					ut_str_cat(&funcs, INPUT_STRING, NULL);
-					break;
-				case NULL_TYPE:
-				case VOID_TYPE:
-				case UNKNOWN_TYPE:
-					break;
-				}
-				break;
-			}
-			break;
-		case INSTRUCTION:
-		case ASSIGN:
-		case RETURN_STATEMENT:
-		case IF_STATEMENT:
-		case PRINT_STATEMENT:
-		case END_STATEMENT:
-		case DIRECTIVE_STATEMENT:
-		case TYPE_STATEMENT:
-		case EOL_STATEMENT:
-			break;
+	char *header = NULL;
+	char *output_filename = ut_allocator_malloc(strlen(output) + 12);
+
+	sprintf(output_filename, "\"%s_funcs.h\"", output);
+	ut_str_cat(&header, DEFAULT_HEADER, "#include ", output_filename, NULL);
+
+	fwrite(header, sizeof(char), strlen(header), f);
+	fwrite("\n\n", sizeof(char), 2, f);
+	free(header);
+	free(output_filename);
+	free(out);
+
+	fclose(f);
+
+	DEBUG("Functions C file created");
+	DEBUG("Creating functions header file");
+
+	char *header_file = NULL;
+	ut_str_cat(&header_file, "./out/", output, "_funcs.h", NULL);
+	s->func_file_h = strdup(header_file);
+
+	DEBUG("Functions header file path: %s", header_file);
+
+	FILE *hf = fopen(header_file, "w");
+	if (hf == NULL) {
+		ERROR(1, "Could not open functions.h for writing");
+	}
+
+	char *header_h = NULL;
+	ut_str_cat(&header_h, DEFAULT_HEADER,
+		   "#ifndef FUNCTIONS_H\n#define FUNCTIONS_H\n\n",
+		   DEFAULT_INCLUDES, NULL);
+	fwrite(header_h, sizeof(char), strlen(header_h), hf);
+	fwrite("\n\n", sizeof(char), 2, hf);
+
+	free(header_h);
+	free(header_file);
+	fclose(hf);
+	DEBUG("Functions header file created");
+}
+
+void close_functions(struct state *s) {
+	DEBUG("Closing functions header file %s", s->func_file_h);
+	FILE *hf = fopen(s->func_file_h, "a");
+	if (hf == NULL) {
+		ERROR(1, "Could not open functions.h for appending");
+	}
+	fwrite("#endif // FUNCTIONS_H\n", sizeof(char), 22, hf);
+	fclose(hf);
+	DEBUG("Functions header file closed");
+}
+
+void add_function(struct state *s, enum functions func) {
+
+	for (unsigned int i = 0; i < s->used_functions.len; i++) {
+		enum functions *f = ut_array_get(&s->used_functions, i);
+		if (*f == func) {
+			DEBUG("Function %d already exists, skipping", func);
+			return;
 		}
 	}
 
-	if (funcs_h != NULL) {
-		fwrite((const void *)funcs_h, sizeof(char),
-		       strlen(funcs_h), file);
-		free(funcs_h);
+	char *header = NULL;
+	char *function = NULL;
 
-		fwrite("\n\n", sizeof(char), 2, file);
+	switch (func) {
+	case INPUT_INT_FUNC:
+		header = strdup(INPUT_INT_HEADER);
+		function = strdup(INPUT_INT);
+		break;
+	case INPUT_STRING_FUNC:
+		header = strdup(INPUT_STRING_HEADER);
+		function = strdup(INPUT_STRING);
+		break;
+	default:
+		ERROR(1, "Unknown function type: %d", func);
 	}
 
-	if (funcs != NULL) {
-		fwrite((const void *)funcs, sizeof(char), strlen(funcs), file);
-		free(funcs);
-	}
+	ut_array_push(&s->used_functions, &func);
 
-	DEBUG("Default functions added");
+	DEBUG("Adding function to header and source files: %d", func);
+	FILE *hf = fopen(s->func_file_h, "a");
+	if (hf == NULL) {
+		ERROR(1, "Could not open functions.h for appending");
+	}
+	fwrite(header, sizeof(char), strlen(header), hf);
+	fwrite("\n", sizeof(char), 1, hf);
+	fclose(hf);
+	DEBUG("Function added to header: %i", func);
+
+	FILE *f = fopen(s->func_file_c, "a");
+	if (f == NULL) {
+		ERROR(1, "Could not open functions.c for appending");
+	}
+	fwrite(function, sizeof(char), strlen(function), f);
+	fwrite("\n", sizeof(char), 1, f);
+	fclose(f);
+	DEBUG("Function added to functions file: %i", func);
 }
 
-void instr_asm(struct instruction_node *instr, FILE *f) {
+void instr_asm(struct state *s, struct instruction_node *instr, FILE *f) {
 	switch (instr->type) {
 	case ASSIGN:
-		asm_assign(instr, f);
+		asm_assign(s, instr, f);
 		break;
 	case RETURN_STATEMENT:
-		asm_return(instr, f);
+		asm_return(s, instr, f);
 		break;
 	case IF_STATEMENT:
-		asm_if(instr, f);
+		asm_if(s, instr, f);
 		break;
 	case PRINT_STATEMENT:
-		asm_print(instr, f);
+		asm_print(s, instr, f);
 		break;
 	case END_STATEMENT:
 		fwrite("}\n", sizeof(char), 2, f);
 		DEBUG("Assembled END_STATEMENT, closing function");
 		break;
 	case DIRECTIVE_STATEMENT:
-		asm_directive(instr, f);
+		asm_directive(s, instr, f);
 		break;
 	case TYPE_STATEMENT:
-		asm_type(instr, f);
+		asm_type(s, instr, f);
 		break;
 
 	case INSTRUCTION:
@@ -145,7 +207,7 @@ void instr_asm(struct instruction_node *instr, FILE *f) {
 
 }
 
-void asm_directive(struct instruction_node *instr, FILE *f) {
+void asm_directive(struct state *s, struct instruction_node *instr, FILE *f) {
 	if (instr->directive_statement.identifier == NULL) {
 		ERROR(1, "Directive identifier is NULL");
 	}
@@ -165,7 +227,7 @@ void asm_directive(struct instruction_node *instr, FILE *f) {
 	free(directive);
 }
 
-void asm_print(struct instruction_node *instr, FILE *f) {
+void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 	switch (instr->print_statement.term.type) {
 	case INPUT_TERM:
 		break;
@@ -188,11 +250,11 @@ void asm_print(struct instruction_node *instr, FILE *f) {
 	}
 }
 
-void asm_type(struct instruction_node *instr, FILE *f) {
+void asm_type(struct state *s, struct instruction_node *instr, FILE *f) {
 	switch (instr->type_statement.type) {
 	case INT_TYPE:{
 			fwrite("int ", sizeof(char), 4, f);
-			asm_assign(instr, f);
+			asm_assign(s, instr, f);
 			break;
 		}
 	case STRING_TYPE:
@@ -204,7 +266,7 @@ void asm_type(struct instruction_node *instr, FILE *f) {
 	}
 }
 
-void asm_assign(struct instruction_node *instr, FILE *f) {
+void asm_assign(struct state *s, struct instruction_node *instr, FILE *f) {
 	if (instr->assign.identifier == NULL) {
 		ERROR(1, "Assign identifier is NULL");
 	}
@@ -223,6 +285,7 @@ void asm_assign(struct instruction_node *instr, FILE *f) {
 		fprintf(f, "%s = ", instr->assign.identifier);
 
 		fprintf(f, INPUT_INT_CALLER_FMT, prompt);
+		add_function(s, INPUT_INT_FUNC);
 
 		break;
 	case TERM_EXPRESSION:
@@ -247,33 +310,104 @@ void asm_assign(struct instruction_node *instr, FILE *f) {
 	}
 }
 
-void asm_if(struct instruction_node *instr, FILE *f) {
+void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
+	fprintf(f, "if (");
 
 	switch (instr->if_statement.rel.type) {
-
 	case GREATER_THAN_RELATION:{
-			if (instr->if_statement.rel.greater_than.left.value ==
-			    NULL
-			    || instr->if_statement.rel.greater_than.right.
-			    value == NULL) {
-				ERROR(1,
-				      "GREATER_THAN_RELATION values are NULL");
+			if (instr->if_statement.rel.greater_than.left.type ==
+			    INPUT_TERM) {
+				char *prompt =
+				    instr->if_statement.rel.greater_than.
+				    left.input.input->prompt;
+				if (prompt == NULL) {
+					ERROR(1,
+					      "Input prompt is NULL for If condition (left)");
+				}
+
+				enum types input_type =
+				    instr->if_statement.rel.greater_than.
+				    left.input.type;
+				switch (input_type) {
+				case INT_TYPE:
+					fprintf(f, "input_int(\"%s\")", prompt);
+					add_function(s, INPUT_INT_FUNC);
+					break;
+				case STRING_TYPE:
+					fprintf(f, "input_string(\"%s\")",
+						prompt);
+					add_function(s, INPUT_STRING_FUNC);
+					break;
+				default:
+					fprintf(f, "input_int(\"%s\")", prompt);	// Default to int
+					break;
+				}
+			} else {
+				if (instr->if_statement.rel.greater_than.
+				    left.value == NULL) {
+					ERROR(1,
+					      "Left term value is NULL in If condition");
+				}
+				fprintf(f, "%s",
+					instr->if_statement.rel.
+					greater_than.left.value);
 			}
-			fprintf(f, "if (%s > %s) {\n",
-				instr->if_statement.rel.greater_than.left.value,
-				instr->if_statement.rel.greater_than.right.
-				value);
+
+			fprintf(f, " > ");
+
+			if (instr->if_statement.rel.greater_than.right.type ==
+			    INPUT_TERM) {
+				char *prompt =
+				    instr->if_statement.rel.greater_than.
+				    right.input.input->prompt;
+				if (prompt == NULL) {
+					ERROR(1,
+					      "Input prompt is NULL for If condition (right)");
+				}
+
+				enum types input_type =
+				    instr->if_statement.rel.greater_than.
+				    right.input.type;
+				switch (input_type) {
+				case INT_TYPE:
+					fprintf(f, "input_int(\"%s\")", prompt);
+					break;
+				case STRING_TYPE:
+					fprintf(f, "input_string(\"%s\")",
+						prompt);
+					break;
+				default:
+					fprintf(f, "input_int(\"%s\")", prompt);	// Default to int
+					break;
+				}
+			} else {
+				if (instr->if_statement.rel.greater_than.
+				    right.value == NULL) {
+					ERROR(1,
+					      "Right term value is NULL in If condition");
+				}
+				fprintf(f, "%s",
+					instr->if_statement.rel.
+					greater_than.right.value);
+			}
+
+			fprintf(f, ") {\n");
+
 			if (instr->if_statement.body != NULL
 			    && instr->if_statement.body->instructions.len > 0) {
-				program_asm_loop(instr->if_statement.body, f,
+				program_asm_loop(s, instr->if_statement.body, f,
 						 1);
 			}
 			break;
 		}
+	default:
+		ERROR(1, "Unknown relation type: %d",
+		      instr->if_statement.rel.type);
+		break;
 	}
 }
 
-void asm_return(struct instruction_node *instr, FILE *f) {
+void asm_return(struct state *s, struct instruction_node *instr, FILE *f) {
 	switch (instr->return_statement.expression.type) {
 
 	case TERM_EXPRESSION:

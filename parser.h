@@ -39,10 +39,16 @@ enum expression_type {
 	INPUT_EXPRESSION,
 };
 
+struct term_input_node {
+	struct input_node *input;
+	enum types type;
+};
+
 struct term_node {
 	enum term_type type;
 	union {
 		char *value;
+		struct term_input_node input;
 	};
 };
 
@@ -134,7 +140,6 @@ struct parser {
 	ut_dynamic_array_t tokens;
 	unsigned int index;
 	ut_dynamic_array_t types_dict;
-	ut_dynamic_array_t instructions_list;
 };
 
 void parser_current(struct parser *p, struct token *token);
@@ -152,10 +157,9 @@ void parse_program(struct parser *p, struct program_node *program);
 void parse_directive(struct parser *p, struct instruction_node *instr);
 void parse_type(struct parser *p, struct instruction_node *instr);
 void parser_init(ut_dynamic_array_t tokens,
-		 ut_dynamic_array_t types_dict, ut_dynamic_array_t instructions_list,
-		 struct parser *p);
+		 ut_dynamic_array_t types_dict, struct parser *p);
 void print_instructions(ut_dynamic_array_t * instructions, unsigned int deep);
 struct token* parser_peek(struct parser *p);
-void add_to_instructions_list(struct parser *p, struct instruction_node *instr);
 const char *show_instruction_type(enum intruction_type type);
+enum types enum_type(char *term);
 #endif				// PARSER_H

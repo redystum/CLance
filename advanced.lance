@@ -1,13 +1,22 @@
-#include stdio.h
+// #include stdio.h
 
 print("Hello World\n")
 int b = 10
 
-if (input("Enter a number: ") > b) {
-    print("input is greater than $b\n")
+if (int input("Enter first number: ") > int input("Enter second number: ")) {
+    print("first number is greater than second number\n")
 }
 
+int a = input("Enter a number: ")
+if (a > b) {
+    print("input is greater than b\n")
+}
+
+/*if (int c = input("Enter a number: ") < b) {
+    print("$c is less than $b\n")
+}*/
+
 print("sum = ${a+b}")
-print(a)
+// print(a)
 
 return 0;
