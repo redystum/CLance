@@ -162,4 +162,5 @@ void print_instructions(ut_dynamic_array_t * instructions, unsigned int deep);
 struct token *parser_peek(struct parser *p);
 const char *show_instruction_type(enum intruction_type type);
 enum types enum_type(char *term);
+const char *show_types(enum types type);
 #endif				// PARSER_H

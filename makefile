@@ -73,7 +73,7 @@ depend:
 	$(CC) -MM *.c
 
 indent:
-	indent $(IFLAGS) *.c *.h
+	indent $(IFLAGS) *.c *.h && rm -f *~
 
 # entry to run the pmccabe utility (computes the "complexity" of the code)
 pmccabe:

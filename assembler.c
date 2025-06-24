@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "utils.h"
 #include "functions.h"
+#include "parser.h"
 
 #define DEFAULT_HEADER \
     "/* \n" \
@@ -13,7 +14,7 @@
     " * Date: " __DATE__ " " __TIME__ "\n" \
     " */\n\n"
 
-void program_asm(struct program_node *program, FILE *file, char *output) {
+void program_asm(struct program_node *program, FILE * file, ut_dynamic_array_t *types_dict, char *output){
 
 	program_header(file, output);
 
@@ -22,7 +23,8 @@ void program_asm(struct program_node *program, FILE *file, char *output) {
 	struct state s = {
 		.func_file_c = NULL,
 		.func_file_h = NULL,
-		.used_functions = *used_functions
+		.used_functions = used_functions,
+		.types_dict = types_dict
 	};
 
 	functions_files(&s, output);
@@ -33,6 +35,10 @@ void program_asm(struct program_node *program, FILE *file, char *output) {
 	program_asm_loop(&s, program, file, 0);
 
 	close_functions(&s);
+
+	ut_array_free(s.used_functions);
+	ut_array_free(s.types_dict);
+	DEBUG("Program assembly completed");
 }
 
 void program_asm_loop(struct state *s, struct program_node *program, FILE *file,
@@ -128,8 +134,8 @@ void close_functions(struct state *s) {
 
 void add_function(struct state *s, enum functions func) {
 
-	for (unsigned int i = 0; i < s->used_functions.len; i++) {
-		enum functions *f = ut_array_get(&s->used_functions, i);
+	for (unsigned int i = 0; i < s->used_functions->len; i++) {
+		enum functions *f = ut_array_get(s->used_functions, i);
 		if (*f == func) {
 			DEBUG("Function %d already exists, skipping", func);
 			return;
@@ -152,7 +158,7 @@ void add_function(struct state *s, enum functions func) {
 		ERROR(1, "Unknown function type: %d", func);
 	}
 
-	ut_array_push(&s->used_functions, &func);
+	ut_array_push(s->used_functions, &func);
 
 	DEBUG("Adding function to header and source files: %d", func);
 	FILE *hf = fopen(s->func_file_h, "a");
@@ -172,6 +178,20 @@ void add_function(struct state *s, enum functions func) {
 	fwrite("\n", sizeof(char), 1, f);
 	fclose(f);
 	DEBUG("Function added to functions file: %i", func);
+}
+
+enum types search_type(struct state *s, char *identifier) {
+	for (unsigned int i = 0; i < s->types_dict->len; i++) {
+		struct type_dict *type = ut_array_get(s->types_dict, i);
+		if (strcmp(type->name, identifier) == 0) {
+			DEBUG("Found type %s for identifier '%s'",
+			      show_types(type->type), identifier);
+			return type->type;
+		}
+	}
+	DEBUG("Type not found for identifier '%s', returning NULL_TYPE",
+	      identifier);
+	return NULL_TYPE;
 }
 
 void instr_asm(struct state *s, struct instruction_node *instr, FILE *f) {
@@ -239,6 +259,31 @@ void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 			instr->print_statement.term.value);
 		break;
 	case IDENTIFIER_TERM:
+		{
+			enum types type = search_type(s,
+						      instr->print_statement.term.value);
+			if (type == NULL_TYPE) {
+				ERROR(1, "Identifier '%s' not found in types",
+				      instr->print_statement.term.value);
+			}
+
+			switch (type) {
+			case INT_TYPE:
+				fprintf(f, "printf(\"%%d\\n\", %s);\n",
+					instr->print_statement.term.value);
+				break;
+			case STRING_TYPE:
+				fprintf(f, "printf(\"%%s\\n\", %s);\n",
+					instr->print_statement.term.value);
+				break;
+			case VOID_TYPE:
+			case UNKNOWN_TYPE:
+			case NULL_TYPE:
+				fprintf(f, "printf(\"%%s\\n\", %s);\n",
+					instr->print_statement.term.value);
+				break;
+			}
+		}
 		break;
 	case STRING_TERM:
 		if (instr->print_statement.term.value == NULL) {

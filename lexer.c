@@ -179,8 +179,19 @@ struct token lexer_next_token(struct lexer *l) {
 			return (struct token) {.type = RETURN,.value = NULL };
 		} else {
 			char next_char = lexer_peek_char(l, 1);
+
+			if (l->ch == '(' || l->ch == ')' || l->ch == ';' ||
+			    l->ch == '+' || l->ch == '=' || l->ch == '<'
+			    || l->ch == '>') {
+				return (struct token) {.type = IDENT,.value =
+					    val
+				};
+			}
+
 			if (next_char != EOL && next_char != EOF
+			    && next_char != '(' && next_char != ')'
 			    && (isalnum(next_char) || next_char == '_')) {
+
 				return (struct token) {.type = TYPE,.value = val
 				};
 			}

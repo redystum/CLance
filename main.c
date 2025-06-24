@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
 	DEBUG("Output file opened: %s", output);
 
-	program_asm(&program, file, output_arg);
+	program_asm(&program, file, &p.types_dict, output_arg);
 
 	fclose(file);
 	DEBUG("Output file closed: %s", output);
