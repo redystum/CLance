@@ -184,12 +184,7 @@ int main(int argc, char *argv[]) {
 
 	ut_array_free(&program.instructions);
 
-	for (unsigned int i = 0; i < tokens.len; i++) {
-		struct token *t = ut_array_get(&tokens, i);
-		free(t->value);
-		t->value = NULL;
-	}
-	ut_array_free(&tokens);
+	lexer_free(&tokens);
 
 	cmdline_parser_free(&args);
 	free(output);

@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "lexer.h"
+#include "string_lexer.h"
 #include "utils.h"
 #include "string.h"
 
@@ -267,6 +268,26 @@ void parse_term(struct parser *p, struct term_node *term) {
 		break;
 	case STRING:
 		term->type = STRING_TERM;
+
+		ut_dynamic_array_t processed_string;
+		ut_array_init(&processed_string, sizeof(struct str_token));
+
+		str_lexer_tokenize(token.value, strlen(token.value),
+				   &processed_string);
+
+		// if (verbose_enabled) {
+		for (unsigned int i = 0; i < processed_string.len; i++) {
+			struct str_token *t =
+			    ut_array_get(&processed_string, i);
+			print_str_token(t);
+		}
+		// }
+
+		term->processed_string = processed_string;
+
+		break;
+	case UNPROCESSED_STRING:
+		term->type = UNPROCESSED_STRING_TERM;
 		term->value = token.value;
 		break;
 	case TYPE:{

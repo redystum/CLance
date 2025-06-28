@@ -14,6 +14,8 @@ const char *show_token_type(enum token_type type) {
 		return "INT";
 	case STRING:
 		return "STRING";
+	case UNPROCESSED_STRING:
+		return "UNPROCESSED_STRING";
 	case INPUT:
 		return "INPUT";
 	case OUTPUT:
@@ -128,6 +130,18 @@ struct token lexer_next_token(struct lexer *l) {
 		ut_string_slice_original(&slice, &val);
 		lexer_read_char(l);
 		return (struct token) {.type = STRING,.value = val };
+	} else if (l->ch == '\'') {
+		lexer_read_char(l);
+		ut_string_slice_t slice = {.str = l->buffer + l->pos,.len = 0 };
+		while (l->ch != EOF && l->ch != '\'') {
+			slice.len += 1;
+			lexer_read_char(l);
+		}
+		char *val = NULL;
+		ut_string_slice_original(&slice, &val);
+		lexer_read_char(l);
+		return (struct token) {.type = UNPROCESSED_STRING,.value = val
+		};
 	} else if (l->ch == '#') {
 		lexer_read_char(l);
 		ut_string_slice_t slice = {.str = l->buffer + l->pos,.len = 0 };
@@ -232,4 +246,13 @@ int lexer_tokenize(char *buffer, unsigned int len, ut_dynamic_array_t *tokens) {
 	} while (tok.type != END);
 
 	return 0;
+}
+
+void lexer_free(ut_dynamic_array_t *tokens) {
+	for (unsigned int i = 0; i < tokens->len; i++) {
+		struct token *t = ut_array_get(tokens, i);
+		free(t->value);
+		t->value = NULL;
+	}
+	ut_array_free(tokens);
 }

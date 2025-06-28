@@ -23,6 +23,7 @@ enum term_type {
 	INT_TERM,
 	IDENTIFIER_TERM,
 	STRING_TERM,
+	UNPROCESSED_STRING_TERM,
 };
 
 enum types {
@@ -49,6 +50,7 @@ struct term_node {
 	union {
 		char *value;
 		struct term_input_node input;
+		ut_dynamic_array_t processed_string;
 	};
 };
 

@@ -14,7 +14,8 @@
     " * Date: " __DATE__ " " __TIME__ "\n" \
     " */\n\n"
 
-void program_asm(struct program_node *program, FILE * file, ut_dynamic_array_t *types_dict, char *output){
+void program_asm(struct program_node *program, FILE *file,
+		 ut_dynamic_array_t *types_dict, char *output) {
 
 	program_header(file, output);
 
@@ -261,7 +262,9 @@ void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 	case IDENTIFIER_TERM:
 		{
 			enum types type = search_type(s,
-						      instr->print_statement.term.value);
+						      instr->
+						      print_statement.term.
+						      value);
 			if (type == NULL_TYPE) {
 				ERROR(1, "Identifier '%s' not found in types",
 				      instr->print_statement.term.value);
@@ -286,6 +289,13 @@ void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 		}
 		break;
 	case STRING_TERM:
+		if (instr->print_statement.term.value == NULL) {
+			ERROR(1, "STRING_TERM value is NULL");
+		}
+		fprintf(f, "printf(\"%s\");\n",
+			instr->print_statement.term.value);
+		break;
+	case UNPROCESSED_STRING_TERM:
 		if (instr->print_statement.term.value == NULL) {
 			ERROR(1, "STRING_TERM value is NULL");
 		}

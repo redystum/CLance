@@ -18,7 +18,7 @@ PROGRAM=lance
 PROGRAM_OPT=args
 
 ## Object files required to build the executable
-PROGRAM_OBJS=main.o utils.o lexer.o parser.o assembler.o $(PROGRAM_OPT).o
+PROGRAM_OBJS=main.o utils.o lexer.o parser.o assembler.o string_lexer.o $(PROGRAM_OPT).o
 
 # Clean and all are not files
 .PHONY: clean all docs indent debugon
@@ -46,6 +46,7 @@ utils.o: utils.c utils.h
 lexer.o: lexer.c lexer.h utils.h
 parser.o: parser.c parser.h utils.h
 assembler.o: assembler.c assembler.h utils.h
+string_lexer.o: string_lexer.c string_lexer.h utils.h
 
 # disable warnings from gengetopt generated files
 $(PROGRAM_OPT).o: $(PROGRAM_OPT).c $(PROGRAM_OPT).h

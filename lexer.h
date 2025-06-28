@@ -7,7 +7,8 @@
 enum token_type {
 	IDENT,			// identifier, like vars, types, etc
 	INT,
-	STRING,
+	STRING,			// string inside ""
+	UNPROCESSED_STRING,	// string inside ''
 	INPUT,
 	OUTPUT,
 	IF,
@@ -47,5 +48,6 @@ void skip_whitespace(struct lexer *l);
 void lexer_init(struct lexer *l, char *buffer, unsigned int buffer_len);
 struct token lexer_next_token(struct lexer *l);
 int lexer_tokenize(char *buffer, unsigned int len, ut_dynamic_array_t * tokens);
+void lexer_free(ut_dynamic_array_t * tokens);
 
 #endif

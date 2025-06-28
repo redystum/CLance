@@ -18,7 +18,8 @@ struct state {
 	ut_dynamic_array_t *types_dict;
 };
 
-void program_asm(struct program_node *program, FILE * file, ut_dynamic_array_t *types_dict, char *output);
+void program_asm(struct program_node *program, FILE * file,
+		 ut_dynamic_array_t * types_dict, char *output);
 void program_asm_loop(struct state *s, struct program_node *program,
 		      FILE * file, int main);
 void program_header(FILE * file, char *output);

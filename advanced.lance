@@ -16,7 +16,8 @@ if (a > b) {
     print("$c is less than $b\n")
 }*/
 
-print("sum = ${a+b}\n")
+print("$a$b ${a+b} sum = ${a+b}\n")
+print('sum = ${a+b}\n')
 print(a)
 
 return 0;
