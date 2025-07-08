@@ -36,15 +36,27 @@ make
 
 **main.lance**
 ```lance
-print("Hello World\n")
+print("Hello World!\n")
 int a = input("Enter a number: ")
-int b = 10;
+int b = 10
+b = 9
 
 if (a > b) {
-    print("a is greater than b\n")
+    print("$a is greater than $b\n")
+
+    if (int input("Enter other number: ") < b) {
+        print("input is less than b\n")
+    }
 }
 
-return 0;
+print("a = $a, b = $b, sum = ${a + b}\n")
+
+int c = 5 + 3
+print("c = ")
+print(c)
+print("c + 2 = ${c + 2}\n")
+
+return 0
 ```
 
 **Compile and run:**
@@ -61,6 +73,7 @@ return 0;
 
 - `main.c` — Entry point
 - `lexer.c`/`lexer.h` — Lexer
+- `string_lexer.c`/`string_lexer.h` — String lexer (for string processing)
 - `parser.c`/`parser.h` — Parser/AST
 - `assembler.c`/`assembler.h` — C code generator
 - `utils.c`/`utils.h` — Utilities (strings, logging, arrays)
