@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "assembler.h"
+#include "lexer.h"
 #include "parser.h"
 #include "utils.h"
 #include "functions.h"
 #include "parser.h"
+#include "string_lexer.h"
 
 #define DEFAULT_HEADER \
     "/* \n" \
@@ -261,10 +263,7 @@ void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 		break;
 	case IDENTIFIER_TERM:
 		{
-			enum types type = search_type(s,
-						      instr->
-						      print_statement.term.
-						      value);
+			enum types type = search_type(s,instr->print_statement.term.value);
 			if (type == NULL_TYPE) {
 				ERROR(1, "Identifier '%s' not found in types",
 				      instr->print_statement.term.value);
@@ -289,11 +288,87 @@ void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 		}
 		break;
 	case STRING_TERM:
-		if (instr->print_statement.term.value == NULL) {
+		if (instr->print_statement.term.processed_string.len == 0) {
 			ERROR(1, "STRING_TERM value is NULL");
 		}
-		fprintf(f, "printf(\"%s\");\n",
-			instr->print_statement.term.value);
+		fprintf(f, "printf(\"");
+
+		char *vars = NULL;
+		for (unsigned int i = 0;
+		     i < instr->print_statement.term.processed_string.len;
+		     i++) {
+			struct str_token *t =
+			    ut_array_get(&instr->print_statement.term.
+					 processed_string, i);
+			switch (t->type) {
+			case STR_TOKEN_TYPE_TEXT:
+				fprintf(f, "%s", t->value);
+				break;
+			case STR_TOKEN_TYPE_IDENTIFIER:{
+					enum types type =
+					    search_type(s, t->value);
+					switch (type) {
+					case INT_TYPE:
+						fprintf(f, "%%d");
+						ut_str_cat(&vars, ", ",
+							   t->value, NULL);
+						break;
+					case STRING_TYPE:
+						fprintf(f, "%%s");
+						ut_str_cat(&vars, ", ",
+							   t->value, NULL);
+						break;
+					default:
+						ERROR(1,
+						      "Unknown type for identifier '%s': %d",
+						      t->value, type);
+						break;
+					}
+					break;
+				}
+			case STR_TOKEN_TYPE_FUNCTION:
+				ut_str_cat(&vars, ", ", NULL);
+				fprintf(f, "%%d");
+
+				for (unsigned int j = 0; j < t->tokens.len; j++) {
+					struct token *tok =
+					    ut_array_get(&t->tokens, j);
+					switch (tok->type) {
+					case IDENT:
+						DEBUG("Printing identifier: %s",
+						      tok->value);
+						ut_str_cat(&vars, tok->value,
+							   NULL);
+						break;
+					case INT:
+						ut_str_cat(&vars, tok->value,
+							   NULL);
+						break;
+					case PLUS:
+						ut_str_cat(&vars, " + ", NULL);
+						break;
+					case END:
+						break;
+					default:
+						ERROR(1,
+						      "Unknown token type in function: %d",
+						      tok->type);
+					}
+				}
+				DEBUG("Function token processed: %s", vars);
+				break;
+			case STR_TOKEN_TYPE_END:
+				break;
+			default:
+				ERROR(1, "Unknown string token type: %d",
+				      t->type);
+			}
+		}
+		if (vars == NULL) {
+			vars = strdup("");
+		}
+		DEBUG("Printing string with variables: '%s'", vars);
+		fprintf(f, "\"%s);\n", vars);
 		break;
 	case UNPROCESSED_STRING_TERM:
 		if (instr->print_statement.term.value == NULL) {
@@ -373,16 +448,16 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 			if (instr->if_statement.rel.greater_than.left.type ==
 			    INPUT_TERM) {
 				char *prompt =
-				    instr->if_statement.rel.greater_than.left.
-				    input.input->prompt;
+				    instr->if_statement.rel.greater_than.
+				    left.input.input->prompt;
 				if (prompt == NULL) {
 					ERROR(1,
 					      "Input prompt is NULL for If condition (left)");
 				}
 
 				enum types input_type =
-				    instr->if_statement.rel.greater_than.left.
-				    input.type;
+				    instr->if_statement.rel.greater_than.
+				    left.input.type;
 				switch (input_type) {
 				case INT_TYPE:
 					fprintf(f, "input_int(\"%s\")", prompt);
@@ -398,14 +473,14 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 					break;
 				}
 			} else {
-				if (instr->if_statement.rel.greater_than.left.
-				    value == NULL) {
+				if (instr->if_statement.rel.greater_than.
+				    left.value == NULL) {
 					ERROR(1,
 					      "Left term value is NULL in If condition");
 				}
 				fprintf(f, "%s",
-					instr->if_statement.rel.greater_than.
-					left.value);
+					instr->if_statement.rel.
+					greater_than.left.value);
 			}
 
 			fprintf(f, " > ");
@@ -413,16 +488,16 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 			if (instr->if_statement.rel.greater_than.right.type ==
 			    INPUT_TERM) {
 				char *prompt =
-				    instr->if_statement.rel.greater_than.right.
-				    input.input->prompt;
+				    instr->if_statement.rel.greater_than.
+				    right.input.input->prompt;
 				if (prompt == NULL) {
 					ERROR(1,
 					      "Input prompt is NULL for If condition (right)");
 				}
 
 				enum types input_type =
-				    instr->if_statement.rel.greater_than.right.
-				    input.type;
+				    instr->if_statement.rel.greater_than.
+				    right.input.type;
 				switch (input_type) {
 				case INT_TYPE:
 					fprintf(f, "input_int(\"%s\")", prompt);
@@ -436,14 +511,14 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 					break;
 				}
 			} else {
-				if (instr->if_statement.rel.greater_than.right.
-				    value == NULL) {
+				if (instr->if_statement.rel.greater_than.
+				    right.value == NULL) {
 					ERROR(1,
 					      "Right term value is NULL in If condition");
 				}
 				fprintf(f, "%s",
-					instr->if_statement.rel.greater_than.
-					right.value);
+					instr->if_statement.rel.
+					greater_than.right.value);
 			}
 
 			fprintf(f, ") {\n");

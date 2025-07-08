@@ -12,10 +12,10 @@ enum str_token_type {
 
 struct str_token {
 	enum str_token_type type;
-	// union {
-	char *value;
-	ut_dynamic_array_t tokens;	// lexer tokens for functions
-	// };
+	union {
+		char *value;
+		ut_dynamic_array_t tokens;	// lexer tokens for functions
+	};
 };
 
 struct str_lexer {

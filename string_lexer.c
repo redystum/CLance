@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "string_lexer.h"
 #include "utils.h"
+#include <ctype.h>
 
 const char *show_str_token_type(enum str_token_type type) {
 	switch (type) {
@@ -135,14 +136,14 @@ struct str_token str_lexer_next_token(struct str_lexer *l) {
 			      tokens.len);
 
 			return (struct str_token) {
-				.type = STR_TOKEN_TYPE_FUNCTION,.value =
-				    val,.tokens = tokens
+				.type = STR_TOKEN_TYPE_FUNCTION,
+				.tokens = tokens
 			};
 		}
 
 		ut_string_slice_t slice = {.str = l->buffer + l->pos,.len = 0 };
-		while (l->ch != ' ' && l->ch != '$' && l->ch != EOF
-		       && l->pos < l->buffer_len) {
+		while (isalnum(l->ch) && l->ch != ' ' && l->ch != '$'
+		       && l->ch != EOF && l->pos < l->buffer_len) {
 			slice.len += 1;
 			str_lexer_read_char(l);
 		}

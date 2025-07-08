@@ -62,44 +62,48 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			if (inst->if_statement.rel.type ==
 			    GREATER_THAN_RELATION) {
 				print_w_deep(deep, " - If Relation: ");
-				if (inst->if_statement.rel.greater_than.left.
-				    type == INPUT_TERM) {
+				if (inst->if_statement.rel.greater_than.
+				    left.type == INPUT_TERM) {
 					printf("%s input(\"%s\")",
-					       show_types(inst->if_statement.
-							  rel.greater_than.left.
-							  input.type),
-					       inst->if_statement.rel.
-					       greater_than.left.input.
-					       input ? inst->if_statement.rel.
-					       greater_than.left.input.input->
-					       prompt : "NULL");
+					       show_types(inst->
+							  if_statement.rel.
+							  greater_than.
+							  left.input.type),
+					       inst->if_statement.
+					       rel.greater_than.left.
+					       input.input ? inst->if_statement.
+					       rel.greater_than.left.input.
+					       input->prompt : "NULL");
 				} else {
 					printf("%s",
-					       inst->if_statement.rel.
-					       greater_than.left.value ? inst->
-					       if_statement.rel.greater_than.
-					       left.value : "NULL");
+					       inst->if_statement.
+					       rel.greater_than.left.
+					       value ? inst->if_statement.rel.
+					       greater_than.left.
+					       value : "NULL");
 				}
 
 				printf(" > ");
 
-				if (inst->if_statement.rel.greater_than.right.
-				    type == INPUT_TERM) {
+				if (inst->if_statement.rel.greater_than.
+				    right.type == INPUT_TERM) {
 					printf("%s input(\"%s\")\n",
-					       show_types(inst->if_statement.
-							  rel.greater_than.
-							  right.input.type),
-					       inst->if_statement.rel.
-					       greater_than.right.input.
-					       input ? inst->if_statement.rel.
-					       greater_than.right.input.input->
-					       prompt : "NULL");
+					       show_types(inst->
+							  if_statement.rel.
+							  greater_than.right.
+							  input.type),
+					       inst->if_statement.
+					       rel.greater_than.right.
+					       input.input ? inst->if_statement.
+					       rel.greater_than.right.input.
+					       input->prompt : "NULL");
 				} else {
 					printf("%s\n",
-					       inst->if_statement.rel.
-					       greater_than.right.value ? inst->
-					       if_statement.rel.greater_than.
-					       right.value : "NULL");
+					       inst->if_statement.
+					       rel.greater_than.right.
+					       value ? inst->if_statement.rel.
+					       greater_than.right.
+					       value : "NULL");
 				}
 			}
 
@@ -107,8 +111,9 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			    && inst->if_statement.body->instructions.len > 0) {
 				print_w_deep(deep,
 					     " - If Body Instructions:\n");
-				print_instructions(&inst->if_statement.body->
-						   instructions, deep + 1);
+				print_instructions(&inst->if_statement.
+						   body->instructions,
+						   deep + 1);
 			}
 			break;
 
@@ -126,21 +131,21 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			case PLUS_EXPRESSION:
 				print_w_deep(deep,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.
-					     left.value,
-					     inst->assign.expression.add.
-					     right.value);
+					     inst->assign.expression.add.left.
+					     value,
+					     inst->assign.expression.add.right.
+					     value);
 				break;
 			case INPUT_EXPRESSION:
 				print_w_deep(deep,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.
-					     input.prompt);
+					     inst->assign.expression.input.
+					     prompt);
 				break;
 			case TERM_EXPRESSION:
 				print_w_deep(deep, " - Term Expression: %s\n",
-					     inst->assign.expression.
-					     term.value);
+					     inst->assign.expression.term.
+					     value);
 				break;
 			default:
 				print_w_deep(deep,
@@ -149,11 +154,32 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			}
 			break;
 		case PRINT_STATEMENT:
-			print_w_deep(deep, " - Print Statement: %s\n",
-				     inst->print_statement.term.value);
 			print_w_deep(deep,
 				     " - Term Type: %d\n",
 				     inst->print_statement.term.type);
+			if (inst->print_statement.term.type == STRING_TERM) {
+				print_w_deep(deep, " - Processed String: \n");
+				for (unsigned int j = 0;
+				     j <
+				     inst->print_statement.
+				     term.processed_string.len; j++) {
+					struct str_token *t =
+					    ut_array_get(&inst->
+							 print_statement.term.
+							 processed_string,
+							 j);
+					print_str_token(t);
+				}
+			} else if (inst->print_statement.term.type ==
+				   UNPROCESSED_STRING_TERM) {
+				print_w_deep(deep,
+					     " - Unprocessed String: %s\n",
+					     inst->print_statement.term.value);
+			} else {
+				print_w_deep(deep, " - Term Value: %s\n",
+					     inst->print_statement.term.value);
+
+			}
 			break;
 		case INPUT_STATEMENT:
 			print_w_deep(deep,
@@ -178,22 +204,22 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			case PLUS_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Plus Expression: %s + %s\n",
-					     inst->assign.expression.add.
-					     left.value,
-					     inst->assign.expression.add.
-					     right.value);
+					     inst->assign.expression.add.left.
+					     value,
+					     inst->assign.expression.add.right.
+					     value);
 				break;
 			case INPUT_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Input Expression with prompt: %s\n",
-					     inst->assign.expression.input.
-					     prompt);
+					     inst->assign.expression.
+					     input.prompt);
 				break;
 			case TERM_EXPRESSION:
 				print_w_deep(deep + 1,
 					     " - Term Expression: %s\n",
-					     inst->assign.expression.
-					     term.value);
+					     inst->assign.expression.term.
+					     value);
 				break;
 			default:
 				print_w_deep(deep + 1,
@@ -217,6 +243,22 @@ void print_instructions(ut_dynamic_array_t *instructions, unsigned int deep) {
 			print_w_deep(deep, " - Unknown Instruction Type\n");
 		}
 	}
+}
+
+ut_dynamic_array_t parse_string(char *str) {
+	ut_dynamic_array_t processed_string;
+	ut_array_init(&processed_string, sizeof(struct str_token));
+
+	str_lexer_tokenize(str, strlen(str), &processed_string);
+
+	// if (verbose_enabled) {
+	for (unsigned int i = 0; i < processed_string.len; i++) {
+		struct str_token *t = ut_array_get(&processed_string, i);
+		print_str_token(t);
+	}
+	// }
+
+	return processed_string;
 }
 
 void parse_term(struct parser *p, struct term_node *term) {
@@ -268,23 +310,7 @@ void parse_term(struct parser *p, struct term_node *term) {
 		break;
 	case STRING:
 		term->type = STRING_TERM;
-
-		ut_dynamic_array_t processed_string;
-		ut_array_init(&processed_string, sizeof(struct str_token));
-
-		str_lexer_tokenize(token.value, strlen(token.value),
-				   &processed_string);
-
-		// if (verbose_enabled) {
-		for (unsigned int i = 0; i < processed_string.len; i++) {
-			struct str_token *t =
-			    ut_array_get(&processed_string, i);
-			print_str_token(t);
-		}
-		// }
-
-		term->processed_string = processed_string;
-
+		term->processed_string = parse_string(token.value);
 		break;
 	case UNPROCESSED_STRING:
 		term->type = UNPROCESSED_STRING_TERM;
