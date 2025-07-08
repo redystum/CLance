@@ -92,7 +92,7 @@ verbose: $(PROGRAM)
 	./$(PROGRAM) --verbose -i advanced.lance -o generated -a -f
 
 build: $(PROGRAM)
-	./$(PROGRAM) -i advanced.lance -o generated -a -f -r
+	./$(PROGRAM) -i main.lance -o generated -a -f -r
 
 debug: $(PROGRAM)
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=valgrind.supp ./$(PROGRAM) -i main.lance -o generated

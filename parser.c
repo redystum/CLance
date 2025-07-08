@@ -552,16 +552,31 @@ void parse_rel(struct parser *p, struct relation_node *rel) {
 
 	parser_advance(p);
 	parser_current(p, &token);
-	if (token.type == GREATER_THAN) {
+	switch (token.type) {
+	case GREATER_THAN:
 		parser_advance(p);
 		parse_term(p, &right);
-
 		rel->type = GREATER_THAN_RELATION;
 		rel->greater_than.left = left;
 		rel->greater_than.right = right;
-	} else {
-		ERROR(1, "rel: Expected '>', got %s %i",
-		      show_token_type(token.type), token.type);
+		break;
+	case LESS_THAN:
+		parser_advance(p);
+		parse_term(p, &right);
+		rel->type = LESS_THAN_RELATION;
+		rel->less_than.left = left;
+		rel->less_than.right = right;
+		break;
+	case EQUALS_TO:	// TODO: do not exists on lexer
+		parser_advance(p);
+		parse_term(p, &right);
+		rel->type = EQUALS_TO_RELATION;
+		rel->equals_to.left = left;
+		rel->equals_to.right = right;
+		break;
+	default:
+		ERROR(1, "rel: Expected '>' or '<', got %s",
+		      show_token_type(token.type));
 	}
 
 	DEBUG("Parsed relation with type %d", rel->type);

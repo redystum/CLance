@@ -16,6 +16,7 @@ enum token_type {
 	PLUS,
 	LESS_THAN,
 	GREATER_THAN,
+	EQUALS_TO,
 	DIRECTIVE,		// the '#' on includes
 	TYPE,
 	OPEN_BRACKET,

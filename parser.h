@@ -74,12 +74,16 @@ struct expression_node {
 
 enum relation_type {
 	GREATER_THAN_RELATION,
+	LESS_THAN_RELATION,
+	EQUALS_TO_RELATION
 };
 
 struct relation_node {
 	enum relation_type type;
 	union {
 		struct term_binary_node greater_than;
+		struct term_binary_node less_than;
+		struct term_binary_node equals_to;
 	};
 };
 

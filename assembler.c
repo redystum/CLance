@@ -263,7 +263,8 @@ void asm_print(struct state *s, struct instruction_node *instr, FILE *f) {
 		break;
 	case IDENTIFIER_TERM:
 		{
-			enum types type = search_type(s,instr->print_statement.term.value);
+			enum types type =
+			    search_type(s, instr->print_statement.term.value);
 			if (type == NULL_TYPE) {
 				ERROR(1, "Identifier '%s' not found in types",
 				      instr->print_statement.term.value);
@@ -440,96 +441,104 @@ void asm_assign(struct state *s, struct instruction_node *instr, FILE *f) {
 	}
 }
 
+void asm_binary_node(struct state *s, FILE *f, struct term_binary_node rel,
+		     enum relation_type rel_type) {
+	if (rel.left.type == INPUT_TERM) {
+		char *prompt = rel.left.input.input->prompt;
+		if (prompt == NULL) {
+			ERROR(1,
+			      "Input prompt is NULL for If condition (left)");
+		}
+
+		enum types input_type = rel.left.input.type;
+		switch (input_type) {
+		case INT_TYPE:
+			fprintf(f, "input_int(\"%s\")", prompt);
+			add_function(s, INPUT_INT_FUNC);
+			break;
+		case STRING_TYPE:
+			fprintf(f, "input_string(\"%s\")", prompt);
+			add_function(s, INPUT_STRING_FUNC);
+			break;
+		default:
+			fprintf(f, "input_int(\"%s\")", prompt);	// Default to int
+			break;
+		}
+	} else {
+		if (rel.left.value == NULL) {
+			ERROR(1, "Left term value is NULL in If condition");
+		}
+		fprintf(f, "%s", rel.left.value);
+	}
+
+	switch (rel_type) {
+	case GREATER_THAN_RELATION:
+		fprintf(f, " > ");
+		break;
+	case LESS_THAN_RELATION:
+		fprintf(f, " < ");
+		break;
+	default:
+		ERROR(1, "Unknown relation type: %d", rel_type);
+		break;
+	}
+
+	if (rel.right.type == INPUT_TERM) {
+		char *prompt = rel.right.input.input->prompt;
+		if (prompt == NULL) {
+			ERROR(1,
+			      "Input prompt is NULL for If condition (right)");
+		}
+
+		enum types input_type = rel.right.input.type;
+		switch (input_type) {
+		case INT_TYPE:
+			fprintf(f, "input_int(\"%s\")", prompt);
+			break;
+		case STRING_TYPE:
+			fprintf(f, "input_string(\"%s\")", prompt);
+			break;
+		default:
+			fprintf(f, "input_int(\"%s\")", prompt);	// Default to int
+			break;
+		}
+	} else {
+		if (rel.right.value == NULL) {
+			ERROR(1, "Right term value is NULL in If condition");
+		}
+		fprintf(f, "%s", rel.right.value);
+	}
+
+	fprintf(f, ") {\n");
+
+}
+
 void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 	fprintf(f, "if (");
 
 	switch (instr->if_statement.rel.type) {
 	case GREATER_THAN_RELATION:{
-			if (instr->if_statement.rel.greater_than.left.type ==
-			    INPUT_TERM) {
-				char *prompt =
-				    instr->if_statement.rel.greater_than.
-				    left.input.input->prompt;
-				if (prompt == NULL) {
-					ERROR(1,
-					      "Input prompt is NULL for If condition (left)");
-				}
-
-				enum types input_type =
-				    instr->if_statement.rel.greater_than.
-				    left.input.type;
-				switch (input_type) {
-				case INT_TYPE:
-					fprintf(f, "input_int(\"%s\")", prompt);
-					add_function(s, INPUT_INT_FUNC);
-					break;
-				case STRING_TYPE:
-					fprintf(f, "input_string(\"%s\")",
-						prompt);
-					add_function(s, INPUT_STRING_FUNC);
-					break;
-				default:
-					fprintf(f, "input_int(\"%s\")", prompt);	// Default to int
-					break;
-				}
-			} else {
-				if (instr->if_statement.rel.greater_than.
-				    left.value == NULL) {
-					ERROR(1,
-					      "Left term value is NULL in If condition");
-				}
-				fprintf(f, "%s",
-					instr->if_statement.rel.
-					greater_than.left.value);
-			}
-
-			fprintf(f, " > ");
-
-			if (instr->if_statement.rel.greater_than.right.type ==
-			    INPUT_TERM) {
-				char *prompt =
-				    instr->if_statement.rel.greater_than.
-				    right.input.input->prompt;
-				if (prompt == NULL) {
-					ERROR(1,
-					      "Input prompt is NULL for If condition (right)");
-				}
-
-				enum types input_type =
-				    instr->if_statement.rel.greater_than.
-				    right.input.type;
-				switch (input_type) {
-				case INT_TYPE:
-					fprintf(f, "input_int(\"%s\")", prompt);
-					break;
-				case STRING_TYPE:
-					fprintf(f, "input_string(\"%s\")",
-						prompt);
-					break;
-				default:
-					fprintf(f, "input_int(\"%s\")", prompt);	// Default to int
-					break;
-				}
-			} else {
-				if (instr->if_statement.rel.greater_than.
-				    right.value == NULL) {
-					ERROR(1,
-					      "Right term value is NULL in If condition");
-				}
-				fprintf(f, "%s",
-					instr->if_statement.rel.
-					greater_than.right.value);
-			}
-
-			fprintf(f, ") {\n");
-
+			asm_binary_node(s, f,
+					instr->if_statement.rel.greater_than,
+					instr->if_statement.rel.type);
 			if (instr->if_statement.body != NULL
 			    && instr->if_statement.body->instructions.len > 0) {
 				program_asm_loop(s, instr->if_statement.body, f,
 						 1);
 			}
-			break;
 		}
+		break;
+	case LESS_THAN_RELATION:{
+			asm_binary_node(s, f,
+					instr->if_statement.rel.less_than,
+					instr->if_statement.rel.type);
+			if (instr->if_statement.body != NULL
+			    && instr->if_statement.body->instructions.len > 0) {
+				program_asm_loop(s, instr->if_statement.body, f,
+						 1);
+			}
+		}
+		break;
 	default:
 		ERROR(1, "Unknown relation type: %d",
 		      instr->if_statement.rel.type);
