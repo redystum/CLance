@@ -478,6 +478,9 @@ void asm_binary_node(struct state *s, FILE *f, struct term_binary_node rel,
 	case LESS_THAN_RELATION:
 		fprintf(f, " < ");
 		break;
+	case EQUALS_TO_RELATION:
+		fprintf(f, " == ");
+		break;
 	default:
 		ERROR(1, "Unknown relation type: %d", rel_type);
 		break;
@@ -534,6 +537,17 @@ void asm_if(struct state *s, struct instruction_node *instr, FILE *f) {
 					instr->if_statement.rel.type);
 			if (instr->if_statement.body != NULL
 			    && instr->if_statement.body->instructions.len > 0) {
+				program_asm_loop(s, instr->if_statement.body, f,
+						 1);
+			}
+		}
+		break;
+	case EQUALS_TO_RELATION:{
+			asm_binary_node(s, f,
+					instr->if_statement.rel.equals_to,
+					instr->if_statement.rel.type);
+			if (instr->if_statement.body != NULL
+				&& instr->if_statement.body->instructions.len > 0) {
 				program_asm_loop(s, instr->if_statement.body, f,
 						 1);
 			}

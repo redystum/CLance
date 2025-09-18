@@ -8,6 +8,10 @@ if (int input("Enter first number: ") > int input("Enter second number: ")) {
     print("first number is greater than second number\n")
 }
 
+if (int input("number 3:") == 3) {
+    print("number is equal to 3\n")
+}
+
 int a = input("Enter a number for var 'a': ")
 if (a > b) {
     print("a is greater than b\n")

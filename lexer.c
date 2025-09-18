@@ -48,8 +48,10 @@ const char *show_token_type(enum token_type type) {
 		return "INVALID";
 	case END:
 		return "END";
+    case EQUALS_TO:
+        return "EQUALS_TO";
 	}
-	return "UNKNOWN";
+    return "UNKNOWN";
 }
 
 void print_token(token_t *token) {
@@ -109,6 +111,10 @@ struct token lexer_next_token(struct lexer *l) {
 		return lexer_next_token(l);
 	} else if (l->ch == '=') {
 		lexer_read_char(l);
+		if (l->ch == '=') {
+			lexer_read_char(l);
+			return (struct token) {.type = EQUALS_TO,.value = NULL };
+		}
 		return (struct token) {.type = EQUAL,.value = NULL };
 	} else if (l->ch == '+') {
 		lexer_read_char(l);
